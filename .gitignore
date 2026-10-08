@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+env/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Node & Next.js
+node_modules/
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+frontend/node_modules/
+frontend/.next/
+
+# Storage & Temporary artifacts
+storage/studio.db*
+storage/projects/*
+!storage/projects/.gitkeep
+tests/test_data/*.mp4
+tests/test_data/*.mp3
+tests/test_data/*.wav
+bin/apple_intelligence_bridge
+
+# OS
+.DS_Store
+*.swp
+*.log
