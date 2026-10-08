@@ -34,6 +34,11 @@ class HindiAdaptationEngine:
         for pattern, replacement in cls.COLLOQUIAL_REPLACEMENTS:
             polished = re.sub(pattern, replacement, polished, flags=re.IGNORECASE)
 
+        # Strip any accidental Japanese glyphs
+        polished = re.sub(r'[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]', '', polished).strip()
+        if not polished or len(polished) < 2:
+            polished = "तुम क्या कह रहे हो?"
+
         # Normalize Hindi punctuation (ensure proper danda '।' or question mark '?')
         if not polished.endswith(('?', '!', '।', '.')):
             polished += "।"

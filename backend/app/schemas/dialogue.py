@@ -13,6 +13,8 @@ class DialogueSegmentBase(BaseModel):
     source_text: str
     translated_text: Optional[str] = None
     adapted_hindi_text: Optional[str] = None
+    adapted_hinglish_text: Optional[str] = None
+    tts_pronunciation_text: Optional[str] = None
     confidence: float = 1.0
     emotion: str = "neutral"
     intensity: float = 0.7
@@ -24,6 +26,7 @@ class DialogueSegmentUpdate(BaseModel):
     character_id: Optional[str] = None
     speaker_label: Optional[str] = None
     adapted_hindi_text: Optional[str] = None
+    adapted_hinglish_text: Optional[str] = None
     emotion: Optional[str] = None
     intensity: Optional[float] = None
     speed_factor: Optional[float] = None

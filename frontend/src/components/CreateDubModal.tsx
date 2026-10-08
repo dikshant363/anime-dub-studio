@@ -22,14 +22,17 @@ export default function CreateDubModal({ isOpen, onClose, onDubCreated }: Create
   const [mediaMetadata, setMediaMetadata] = useState<MediaMetadata | null>(null);
   const [projectName, setProjectName] = useState("");
   const [sourceLang, setSourceLang] = useState("ja");
-  const [targetLang, setTargetLang] = useState("hi");
+  const [targetLang, setTargetLang] = useState("hinglish");
+  const [englishMixing, setEnglishMixing] = useState("auto");
   const [speakerCount, setSpeakerCount] = useState("auto");
+  const [selectedAudioStreamIndex, setSelectedAudioStreamIndex] = useState<number | undefined>(undefined);
+  const [voiceProvider, setVoiceProvider] = useState<string>("local");
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Advanced Options
   const [voiceMode, setVoiceMode] = useState("character_voices");
   const [translationModel, setTranslationModel] = useState("auto");
-  const [translationStyle, setTranslationStyle] = useState("natural_anime");
+  const [translationStyle, setTranslationStyle] = useState("natural_hinglish");
   const [emotionMode, setEmotionMode] = useState("auto");
   const [preserveBackground, setPreserveBackground] = useState(true);
   const [normalizeLoudness, setNormalizeLoudness] = useState(true);
@@ -54,6 +57,14 @@ export default function CreateDubModal({ isOpen, onClose, onDubCreated }: Create
         const meta = await probeMediaFile(path);
         if (meta) {
           setMediaMetadata(meta);
+          if (meta.audio_streams && meta.audio_streams.length > 0) {
+            const jaStream = meta.audio_streams.find((s) => s.is_japanese);
+            if (jaStream) {
+              setSelectedAudioStreamIndex(jaStream.stream_index);
+            } else {
+              setSelectedAudioStreamIndex(meta.audio_streams[0].stream_index);
+            }
+          }
         }
         return;
       }
@@ -101,6 +112,8 @@ export default function CreateDubModal({ isOpen, onClose, onDubCreated }: Create
           targetLanguage: targetLang,
           translationModel,
           translationStyle,
+          voiceMode: voiceProvider,
+          audioStreamIndex: selectedAudioStreamIndex,
         });
         onDubCreated({
           jobId,
@@ -130,6 +143,7 @@ export default function CreateDubModal({ isOpen, onClose, onDubCreated }: Create
           voice_mode: voiceMode,
           translation_model: translationModel,
           translation_style: translationStyle,
+          english_mixing: englishMixing,
           emotion_mode: emotionMode,
           preserve_background: preserveBackground,
           normalize_loudness: normalizeLoudness,
@@ -181,11 +195,20 @@ export default function CreateDubModal({ isOpen, onClose, onDubCreated }: Create
           </button>
         </div>
 
-        {/* Free dubbing time banner */}
-        <div className="my-4 px-4 py-3 bg-[#1c1c24] border border-[#2c2c38] rounded-xl flex items-center justify-between text-xs">
-          <span className="text-neutral-300 font-medium">Free dubbing time</span>
-          <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
-            <span>🎁</span> 30 min free dubbed output
+        {/* Processing Engine Banner */}
+        <div className={`my-4 px-4 py-3 border rounded-xl flex items-center justify-between text-xs transition ${
+          voiceProvider === "local"
+            ? "bg-[#13231a] border-[#234d34]"
+            : "bg-[#241c14] border-[#4d3823]"
+        }`}>
+          <span className={`font-medium flex items-center gap-2 ${
+            voiceProvider === "local" ? "text-emerald-300" : "text-amber-300"
+          }`}>
+            <span className={`w-2 h-2 rounded-full ${voiceProvider === "local" ? "bg-emerald-400 animate-pulse" : "bg-amber-400"}`} />
+            {voiceProvider === "local" ? "Local processing • No API required" : "ONLINE / CLOUD FALLBACK • Requires Internet"}
+          </span>
+          <span className="text-neutral-400 font-mono text-[11px]">
+            {voiceProvider === "local" ? "MacNativeSpeechProvider (Rishi, Lekha, Aman, Tara)" : "Microsoft Edge TTS (Cloud)"}
           </span>
         </div>
 
@@ -277,6 +300,121 @@ export default function CreateDubModal({ isOpen, onClose, onDubCreated }: Create
             )}
           </div>
 
+          {/* Audio Stream Selection (if multiple or probed streams exist) */}
+          {mediaMetadata?.audio_streams && mediaMetadata.audio_streams.length > 0 && (
+            <div className="p-3.5 bg-[#181820] border border-[#2b2b38] rounded-xl space-y-2.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-neutral-200 flex items-center gap-1.5">
+                  <Volume2 className="w-3.5 h-3.5 text-neutral-400" />
+                  Select Audio Track to Dub
+                </label>
+                <span className="text-[11px] text-neutral-400">
+                  {mediaMetadata.audio_streams.length} stream{mediaMetadata.audio_streams.length > 1 ? "s" : ""} found
+                </span>
+              </div>
+              <div className="space-y-1.5">
+                {mediaMetadata.audio_streams.map((stream) => {
+                  const isSelected = selectedAudioStreamIndex === stream.stream_index;
+                  return (
+                    <div
+                      key={stream.stream_index}
+                      onClick={() => setSelectedAudioStreamIndex(stream.stream_index)}
+                      className={`flex items-center justify-between p-2.5 rounded-lg border cursor-pointer transition text-xs ${
+                        isSelected
+                          ? "bg-neutral-800/80 border-neutral-400 text-white"
+                          : "bg-[#14141a] border-[#252530] text-neutral-400 hover:border-neutral-600"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <input
+                          type="radio"
+                          name="audioStream"
+                          checked={isSelected}
+                          onChange={() => setSelectedAudioStreamIndex(stream.stream_index)}
+                          className="accent-white"
+                        />
+                        <div>
+                          <span className="font-medium text-neutral-200">
+                            Stream #{stream.stream_index} ({(stream.language || "und").toUpperCase()})
+                          </span>
+                          {stream.title && (
+                            <span className="ml-1.5 text-neutral-400 text-[11px]">
+                              - {stream.title}
+                            </span>
+                          )}
+                          <div className="text-[10px] text-neutral-400 font-mono mt-0.5">
+                            {stream.codec_name} • {stream.channels} ch • {stream.sample_rate} Hz
+                          </div>
+                        </div>
+                      </div>
+                      {stream.is_japanese && (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-950/80 text-emerald-300 border border-emerald-800/50">
+                          Japanese Dialogue (Recommended)
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Voice Synthesis Provider Selection */}
+          <div className="p-3.5 bg-[#181820] border border-[#2b2b38] rounded-xl space-y-2.5">
+            <label className="block text-xs font-semibold text-neutral-200">
+              Voice Synthesis Engine
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div
+                onClick={() => setVoiceProvider("local")}
+                className={`p-3 rounded-lg border cursor-pointer transition text-xs flex flex-col justify-between ${
+                  voiceProvider === "local"
+                    ? "bg-neutral-800/90 border-neutral-300 text-white shadow-md"
+                    : "bg-[#14141a] border-[#252530] text-neutral-400 hover:border-neutral-600"
+                }`}
+              >
+                <div>
+                  <div className="font-semibold text-neutral-100 flex items-center justify-between">
+                    <span>Local Apple Silicon</span>
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-emerald-900/60 text-emerald-300 border border-emerald-700/50">
+                      DEFAULT
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-neutral-400 mt-1">
+                    MacNativeSpeechProvider • Offline macOS Indian voices (Rishi, Lekha, Aman, Tara)
+                  </p>
+                </div>
+                <div className="mt-2 text-[10px] text-emerald-400 font-medium">
+                  ✓ Local processing • No API required
+                </div>
+              </div>
+
+              <div
+                onClick={() => setVoiceProvider("online")}
+                className={`p-3 rounded-lg border cursor-pointer transition text-xs flex flex-col justify-between ${
+                  voiceProvider === "online"
+                    ? "bg-neutral-800/90 border-neutral-300 text-white shadow-md"
+                    : "bg-[#14141a] border-[#252530] text-neutral-400 hover:border-neutral-600"
+                }`}
+              >
+                <div>
+                  <div className="font-semibold text-neutral-100 flex items-center justify-between">
+                    <span>Microsoft Edge TTS</span>
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-amber-900/60 text-amber-300 border border-amber-700/50">
+                      FALLBACK
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-neutral-400 mt-1">
+                    Cloud neural synthesis • Requires internet connection (Madhur, Swara)
+                  </p>
+                </div>
+                <div className="mt-2 text-[10px] text-amber-400 font-medium">
+                  ⚠️ ONLINE / OPTIONAL FALLBACK
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Primary Selectors */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -316,14 +454,25 @@ export default function CreateDubModal({ isOpen, onClose, onDubCreated }: Create
 
           <div>
             <label className="block text-xs font-medium text-neutral-300 mb-1.5">
-              Target languages
+              Target language
             </label>
             <select
               value={targetLang}
-              onChange={(e) => setTargetLang(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setTargetLang(val);
+                if (val === "hinglish" || val === "hi_en") {
+                  setTranslationStyle("natural_hinglish");
+                  setEnglishMixing("auto");
+                } else if (val === "hi") {
+                  setTranslationStyle("natural_anime");
+                }
+              }}
               className="w-full bg-[#181820] border border-[#2b2b38] rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-neutral-400"
             >
+              <option value="hinglish">🇮🇳 Hinglish (Default for anime dubs)</option>
               <option value="hi">🇮🇳 Hindi (First-Class Natural Dub)</option>
+              <option value="hi_en">🇮🇳 Hindi + English</option>
               <option value="gu">🇮🇳 Gujarati</option>
               <option value="bn">🇧🇩 Bengali</option>
               <option value="mr">🇮🇳 Marathi</option>
@@ -332,6 +481,45 @@ export default function CreateDubModal({ isOpen, onClose, onDubCreated }: Create
               <option value="en">🇺🇸 English</option>
             </select>
           </div>
+
+          {/* Hinglish Specific Controls */}
+          {(targetLang === "hinglish" || targetLang === "hi_en") && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3.5 bg-[#181820]/90 border border-neutral-800 rounded-xl">
+              <div>
+                <label className="block text-xs font-medium text-neutral-300 mb-1">
+                  English mixing control
+                </label>
+                <select
+                  value={englishMixing}
+                  onChange={(e) => setEnglishMixing(e.target.value)}
+                  className="w-full bg-[#121216] border border-[#2a2a35] rounded-lg px-3 py-2 text-xs text-white"
+                >
+                  <option value="auto">Auto (Context & Character Aware)</option>
+                  <option value="low">Low ("Main samajh nahi paa raha")</option>
+                  <option value="medium">Medium ("Main understand nahi kar paa raha")</option>
+                  <option value="high">High ("I seriously don't understand")</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-neutral-300 mb-1">
+                  Translation style
+                </label>
+                <select
+                  value={translationStyle}
+                  onChange={(e) => setTranslationStyle(e.target.value)}
+                  className="w-full bg-[#121216] border border-[#2a2a35] rounded-lg px-3 py-2 text-xs text-white"
+                >
+                  <option value="natural_hinglish">Natural Hinglish</option>
+                  <option value="urban_hinglish">Urban Hinglish</option>
+                  <option value="casual_hinglish">Casual Hinglish</option>
+                  <option value="anime_hinglish">Anime Hinglish</option>
+                  <option value="formal_hinglish">Formal Hinglish</option>
+                  <option value="balanced_hi_en">Balanced Hindi-English</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </div>
+            </div>
+          )}
 
           {/* Advanced options toggle */}
           <div className="pt-2">
@@ -349,15 +537,14 @@ export default function CreateDubModal({ isOpen, onClose, onDubCreated }: Create
             {showAdvanced && (
               <div className="mt-3 p-4 bg-[#181820] border border-[#282834] rounded-xl space-y-4 text-xs">
                 <div>
-                  <label className="block font-medium text-neutral-300 mb-1">Voice</label>
+                  <label className="block font-medium text-neutral-300 mb-1">Character Voice Strategy</label>
                   <select
                     value={voiceMode}
                     onChange={(e) => setVoiceMode(e.target.value)}
                     className="w-full bg-[#121216] border border-[#2a2a35] rounded-lg px-3 py-2 text-white"
                   >
-                    <option value="character_voices">🎙 Character voices (Hindi Neural Madhur/Swara)</option>
-                    <option value="clone_authorized">👤 Authorized voice clone</option>
-                    <option value="piper_offline">📦 Offline Piper Neural Voice</option>
+                    <option value="character_voices">🎙 Distinct Character Voices (Auto Pitch/Speed Adapted)</option>
+                    <option value="clone_authorized">👤 Authorized Voice Profile Matching</option>
                   </select>
                 </div>
 

@@ -23,6 +23,8 @@ class DialogueSegment(Base):
     source_text = Column(Text, nullable=False)
     translated_text = Column(Text, nullable=True)
     adapted_hindi_text = Column(Text, nullable=True)
+    adapted_hinglish_text = Column(Text, nullable=True)
+    tts_pronunciation_text = Column(Text, nullable=True)
     
     confidence = Column(Float, default=1.0)
     emotion = Column(String(50), default="neutral") # neutral, angry, excited, happy, sad, etc.

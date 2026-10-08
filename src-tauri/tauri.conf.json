@@ -37,6 +37,11 @@
       "icons/icon.ico"
     ],
     "category": "Entertainment",
+    "resources": {
+      "swift/AppleFoundationModelService": "swift/AppleFoundationModelService",
+      "../backend": "backend",
+      "../scripts": "scripts"
+    },
     "macOS": {
       "minimumSystemVersion": "13.0"
     }

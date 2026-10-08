@@ -75,10 +75,16 @@ class OllamaTranslationEngine(TranslationEngine):
                 if content.startswith(prefix):
                     content = content[len(prefix):].strip()
 
+            from backend.app.pipeline.adaptation.hinglish_adapter import HinglishAdaptationEngine
+            hinglish = HinglishAdaptationEngine.to_hinglish(content, personality, style)
+            tts_pron = HinglishAdaptationEngine.create_tts_pronunciation(hinglish, content)
+
             return TranslationResult(
                 source_text=text,
                 translated_text=content,
                 adapted_hindi=content,
+                adapted_hinglish=hinglish,
+                tts_pronunciation_text=tts_pron,
                 provider=f"Ollama ({self.model_name})",
                 emotion=emotion_hint or "neutral",
                 intensity=0.75

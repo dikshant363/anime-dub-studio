@@ -4,6 +4,10 @@ import React from "react";
 export const metadata = {
   title: "Anime Dub Studio — Local-First AI Dubbing",
   description: "Japanese Anime to Natural Hindi Dubbing Studio powered by Apple Silicon M4 & MLX",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({

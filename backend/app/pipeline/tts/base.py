@@ -20,6 +20,7 @@ class TTSProvider(ABC):
         speed_rate: float = 1.0,
         pitch_percent: float = 0.0,
         emotion: str = "neutral",
+        **kwargs
     ) -> TTSResult:
         """Synthesizes target text into an audio file and returns measured duration."""
         pass

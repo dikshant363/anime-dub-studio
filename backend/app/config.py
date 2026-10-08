@@ -12,12 +12,12 @@ class Settings(BaseSettings):
     
     # Base paths
     BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
-    STORAGE_DIR: Path = BASE_DIR / "storage"
-    PROJECTS_DIR: Path = STORAGE_DIR / "projects"
-    MODELS_DIR: Path = BASE_DIR / "models"
+    STORAGE_DIR: Path = Path(os.getenv("STORAGE_DIR", str(BASE_DIR / "storage")))
+    PROJECTS_DIR: Path = Path(os.getenv("PROJECTS_DIR", str(STORAGE_DIR / "projects")))
+    MODELS_DIR: Path = Path(os.getenv("MODELS_DIR", str(BASE_DIR / "models")))
     
     # Database
-    DATABASE_URL: str = f"sqlite+aiosqlite:///{STORAGE_DIR}/studio.db"
+    DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite+aiosqlite:///{STORAGE_DIR}/studio.db")
     
     # AI Engine & Services
     OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")

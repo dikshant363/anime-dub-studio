@@ -63,24 +63,49 @@ impl AIRouter {
             }
         }
 
+        let is_hinglish = target.to_lowercase().contains("hinglish") || target.to_lowercase() == "hi-latn";
+
         // 4. Deterministic Fallback
-        let fallback = match text.trim() {
-            "何をしているんだ？" | "何をしているんだ" => "तुम क्या कर रहे हो?",
-            "誰だ？" | "誰だ" => "कौन हो तुम?",
-            "行くぞ！" | "行くぞ" => "चलो चलें!",
-            "ありがとう" => "शुक्रिया!",
-            "さようなら" => "अलविदा!",
-            _ => "तुम क्या कह रहे हो?",
+        let fallback = if is_hinglish {
+            match text.trim() {
+                "何をしているんだ？" | "何をしているんだ" => "Tum kya kar rahe ho?",
+                "早く行こう！" | "早く行こう" => "Jaldi chalo!",
+                "信じられない！" | "信じられない" => "Mujhe yakeen nahi ho raha!",
+                "誰だ？" | "誰だ" => "Kaun ho tum?",
+                "行くぞ！" | "行くぞ" => "Chalo chalein!",
+                "ありがとう" => "Shukriya!",
+                "さようなら" => "Alvida!",
+                _ => "Tum kya bol rahe ho?",
+            }
+        } else {
+            match text.trim() {
+                "何をしているんだ？" | "何をしているんだ" => "तुम क्या कर रहे हो?",
+                "早く行こう！" | "早く行こう" => "जल्दी चलो!",
+                "信じられない！" | "信じられない" => "मुझे यकीन नहीं हो रहा!",
+                "誰だ？" | "誰だ" => "कौन हो तुम?",
+                "行くぞ！" | "行くぞ" => "चलो चलें!",
+                "ありがとう" => "शुक्रिया!",
+                "さようなら" => "अलविदा!",
+                _ => "तुम क्या कह रहे हो?",
+            }
         };
 
         (fallback.to_string(), "Local Anime Localization Engine".to_string())
     }
 
-    async fn translate_with_ollama(text: &str, _source: &str, _target: &str, _character: Option<&str>) -> Option<String> {
-        let prompt = format!(
-            "Translate Japanese anime dialogue into natural spoken Hindi dub dialogue in Devanagari script. Line: {}\nOutput ONLY Hindi dialogue:",
-            text
-        );
+    async fn translate_with_ollama(text: &str, _source: &str, target: &str, _character: Option<&str>) -> Option<String> {
+        let is_hinglish = target.to_lowercase().contains("hinglish") || target.to_lowercase() == "hi-latn";
+        let prompt = if is_hinglish {
+            format!(
+                "Translate Japanese anime dialogue into natural spoken Hinglish dub dialogue written in Latin/Roman script (Hindi mixed naturally with English). Line: {}\nOutput ONLY Hinglish dialogue in Roman script:",
+                text
+            )
+        } else {
+            format!(
+                "Translate Japanese anime dialogue into natural spoken Hindi dub dialogue in Devanagari script. Line: {}\nOutput ONLY Hindi dialogue:",
+                text
+            )
+        };
 
         let body = serde_json::json!({
             "model": "qwen3.5:4b",
@@ -129,5 +154,23 @@ mod tests {
         println!("Translated: {} (Provider: {})", hindi, provider);
         assert!(!hindi.is_empty());
         assert!(!provider.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_ai_router_hinglish_translation() {
+        let (hinglish, provider) = AIRouter::translate(
+            "何をしているんだ？",
+            "ja",
+            "hinglish",
+            Some("Protagonist"),
+            "natural_anime",
+            "auto",
+        ).await;
+
+        println!("Translated Hinglish: {} (Provider: {})", hinglish, provider);
+        assert!(!hinglish.is_empty());
+        assert!(!provider.is_empty());
+        // Verify output does not contain Japanese characters
+        assert!(!hinglish.chars().any(|c| (c >= '\u{3040}' && c <= '\u{30ff}') || (c >= '\u{4e00}' && c <= '\u{9fff}')));
     }
 }

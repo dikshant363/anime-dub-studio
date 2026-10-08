@@ -18,7 +18,7 @@ class AudioMixer:
         Assembles individual dialogue audio files onto a single continuous timeline track.
         """
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        total_samples = int(total_duration * sample_rate) + sample_rate # extra 1s buffer
+        total_samples = max(1, int(round(total_duration * sample_rate)))
         master_buffer = np.zeros(total_samples, dtype=np.float32)
 
         for seg in segments:

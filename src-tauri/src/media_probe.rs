@@ -3,6 +3,18 @@ use std::path::Path;
 use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AudioStreamInfo {
+    pub index: u32,
+    pub stream_index: u32,
+    pub codec_name: String,
+    pub channels: u32,
+    pub sample_rate: u32,
+    pub language: Option<String>,
+    pub title: Option<String>,
+    pub is_japanese: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MediaMetadata {
     pub file_path: String,
     pub filename: String,
@@ -16,6 +28,7 @@ pub struct MediaMetadata {
     pub audio_sample_rate: u32,
     pub audio_tracks_count: usize,
     pub subtitle_tracks_count: usize,
+    pub audio_streams: Vec<AudioStreamInfo>,
     pub has_enough_disk_space: bool,
 }
 
@@ -55,6 +68,7 @@ pub fn probe_media(file_path_str: &str) -> Result<MediaMetadata, String> {
     let mut audio_sample_rate = 48000;
     let mut audio_tracks_count = 0;
     let mut subtitle_tracks_count = 0;
+    let mut audio_streams = Vec::new();
 
     if let Some(stream_arr) = streams {
         for s in stream_arr {
@@ -75,11 +89,32 @@ pub fn probe_media(file_path_str: &str) -> Result<MediaMetadata, String> {
                     }
                 }
             } else if codec_type == "audio" {
+                let stream_idx = s.get("index").and_then(|i| i.as_u64()).unwrap_or(audio_tracks_count as u64) as u32;
+                let c_name = s.get("codec_name").and_then(|c| c.as_str()).unwrap_or("aac").to_string();
+                let ch = s.get("channels").and_then(|c| c.as_u64()).unwrap_or(2) as u32;
+                let sr = s.get("sample_rate").and_then(|sr| sr.as_str()).and_then(|sr| sr.parse().ok()).unwrap_or(48000);
+                let tags = s.get("tags");
+                let lang = tags.and_then(|t| t.get("language")).and_then(|l| l.as_str()).map(|l| l.to_string());
+                let title = tags.and_then(|t| t.get("title")).and_then(|t| t.as_str()).map(|t| t.to_string());
+                let is_jpn = lang.as_deref().map(|l| l.eq_ignore_ascii_case("jpn") || l.eq_ignore_ascii_case("ja") || l.eq_ignore_ascii_case("japanese")).unwrap_or(false)
+                    || title.as_deref().map(|t| t.to_lowercase().contains("japanese") || t.to_lowercase().contains("jpn")).unwrap_or(false);
+
+                audio_streams.push(AudioStreamInfo {
+                    index: audio_tracks_count as u32,
+                    stream_index: stream_idx,
+                    codec_name: c_name.clone(),
+                    channels: ch,
+                    sample_rate: sr,
+                    language: lang,
+                    title,
+                    is_japanese: is_jpn,
+                });
+
                 audio_tracks_count += 1;
                 if audio_codec.is_none() {
-                    audio_codec = s.get("codec_name").and_then(|c| c.as_str()).map(|c| c.to_string());
-                    audio_channels = s.get("channels").and_then(|c| c.as_u64()).unwrap_or(2) as u32;
-                    audio_sample_rate = s.get("sample_rate").and_then(|sr| sr.as_str()).and_then(|sr| sr.parse().ok()).unwrap_or(48000);
+                    audio_codec = Some(c_name);
+                    audio_channels = ch;
+                    audio_sample_rate = sr;
                 }
             } else if codec_type == "subtitle" {
                 subtitle_tracks_count += 1;
@@ -110,6 +145,7 @@ pub fn probe_media(file_path_str: &str) -> Result<MediaMetadata, String> {
         audio_sample_rate,
         audio_tracks_count,
         subtitle_tracks_count,
+        audio_streams,
         has_enough_disk_space: true,
     })
 }
@@ -125,5 +161,6 @@ mod tests {
         assert_eq!(meta.fps, 24.0);
         assert_eq!(meta.audio_channels, 1);
         assert!(meta.duration_secs >= 4.0);
+        assert_eq!(meta.audio_streams.len(), 1);
     }
 }

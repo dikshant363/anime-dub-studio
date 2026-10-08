@@ -41,6 +41,8 @@ async def update_segment(
 
     if update_data.adapted_hindi_text is not None:
         seg.adapted_hindi_text = update_data.adapted_hindi_text
+    if update_data.adapted_hinglish_text is not None:
+        seg.adapted_hinglish_text = update_data.adapted_hinglish_text
     if update_data.character_id is not None:
         seg.character_id = update_data.character_id
     if update_data.speaker_label is not None:

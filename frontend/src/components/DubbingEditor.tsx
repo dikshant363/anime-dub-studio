@@ -54,7 +54,7 @@ export default function DubbingEditor({ episodeId, onBack }: DubbingEditorProps)
 
   const activeSegment = episode?.dialogues?.[activeSegmentIndex];
 
-  const handleUpdateSegmentText = async (newText: string) => {
+  const handleUpdateSegmentHindi = async (newText: string) => {
     if (!activeSegment) return;
     try {
       const res = await fetch(
@@ -63,6 +63,29 @@ export default function DubbingEditor({ episodeId, onBack }: DubbingEditorProps)
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ adapted_hindi_text: newText }),
+        }
+      );
+      if (res.ok) {
+        const updated = await res.json();
+        setEpisode((prev: any) => ({
+          ...prev,
+          dialogues: prev.dialogues.map((d: any) => (d.id === updated.id ? updated : d)),
+        }));
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUpdateSegmentHinglish = async (newText: string) => {
+    if (!activeSegment) return;
+    try {
+      const res = await fetch(
+        `http://127.0.0.1:8000/api/episodes/${episodeId}/segments/${activeSegment.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ adapted_hinglish_text: newText }),
         }
       );
       if (res.ok) {
@@ -222,37 +245,66 @@ export default function DubbingEditor({ episodeId, onBack }: DubbingEditorProps)
                       : "bg-[#131318] border-[#23232c] hover:border-neutral-700"
                   }`}
                 >
-                  <div className="flex items-center justify-between text-xs text-neutral-400 mb-2">
+                  <div className="flex flex-wrap items-center justify-between text-xs text-neutral-400 mb-2 gap-1.5">
                     <span className="font-mono text-neutral-300">
-                      {seg.start_time?.toFixed(2)}s — {seg.end_time?.toFixed(2)}s
+                      {seg.start_time?.toFixed(2)}s — {seg.end_time?.toFixed(2)}s ({((seg.end_time || 0) - (seg.start_time || 0)).toFixed(1)}s)
                     </span>
-                    <span className="px-2 py-0.5 rounded bg-neutral-800 text-neutral-200 text-[10px]">
-                      {seg.speaker_label}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="px-2 py-0.5 rounded bg-neutral-800 text-neutral-200 text-[10px]">
+                        {seg.speaker_label}
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded bg-indigo-950/70 border border-indigo-800/60 text-indigo-300 text-[10px]">
+                        {seg.emotion || "neutral"}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Japanese Source */}
-                  <div className="text-xs text-neutral-400 mb-1">
+                  <div className="text-xs text-neutral-400 mb-1.5">
+                    <span className="text-neutral-500 text-[10px] uppercase font-bold tracking-wider mr-1">Original:</span>
                     🇯🇵 <span className="font-medium text-neutral-300">{seg.source_text}</span>
                   </div>
 
-                  {/* Hindi Target */}
-                  <div className="text-sm text-white font-medium mb-3">
-                    🇮🇳 {seg.adapted_hindi_text}
+                  {/* Roman Hinglish Dub */}
+                  <div className="text-sm text-amber-200/90 font-medium mb-1">
+                    <span className="text-neutral-500 text-[10px] uppercase font-bold tracking-wider mr-1">Hinglish:</span>
+                    🇮🇳 {seg.adapted_hinglish_text || seg.adapted_hindi_text}
                   </div>
+
+                  {/* Hindi Devanagari */}
+                  {seg.adapted_hindi_text && (
+                    <div className="text-xs text-neutral-300 font-normal mb-3">
+                      <span className="text-neutral-500 text-[10px] uppercase font-bold tracking-wider mr-1">Hindi (Devanagari):</span>
+                      🇮🇳 {seg.adapted_hindi_text}
+                    </div>
+                  )}
 
                   {/* Controls if Active */}
                   {isActive && (
                     <div className="mt-3 pt-3 border-t border-[#2c2c38] space-y-3 text-xs">
                       <div>
                         <label className="block text-neutral-400 text-[10px] uppercase font-bold tracking-wider mb-1">
-                          Edit Hindi Dialogue
+                          Edit Roman Hinglish Dialogue
+                        </label>
+                        <input
+                          type="text"
+                          defaultValue={seg.adapted_hinglish_text || seg.adapted_hindi_text}
+                          onBlur={(e) => handleUpdateSegmentHinglish(e.target.value)}
+                          className="w-full bg-[#121216] border border-[#2a2a35] rounded-lg px-3 py-1.5 text-white text-xs focus:outline-none focus:border-white"
+                          placeholder="e.g. Tum kya kar rahe ho?"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-neutral-400 text-[10px] uppercase font-bold tracking-wider mb-1">
+                          Edit Devanagari Hindi Dialogue
                         </label>
                         <input
                           type="text"
                           defaultValue={seg.adapted_hindi_text}
-                          onBlur={(e) => handleUpdateSegmentText(e.target.value)}
+                          onBlur={(e) => handleUpdateSegmentHindi(e.target.value)}
                           className="w-full bg-[#121216] border border-[#2a2a35] rounded-lg px-3 py-1.5 text-white text-xs focus:outline-none focus:border-white"
+                          placeholder="e.g. तुम क्या कर रहे हो?"
                         />
                       </div>
 
@@ -265,7 +317,7 @@ export default function DubbingEditor({ episodeId, onBack }: DubbingEditorProps)
                           <Play className="w-3.5 h-3.5" /> Preview Audio
                         </button>
                         <div className="text-[11px] text-neutral-400 font-mono">
-                          Duration Ratio: {seg.duration_ratio || 1.0}x
+                          Duration Ratio: {seg.duration_ratio || 1.0}x • Voice: {seg.voice_id || "hi-IN-MadhurNeural"}
                         </div>
                       </div>
                     </div>

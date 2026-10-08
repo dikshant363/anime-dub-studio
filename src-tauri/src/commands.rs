@@ -16,6 +16,8 @@ pub struct StartDubRequest {
     pub target_language: String,
     pub translation_model: String,
     pub translation_style: String,
+    pub voice_mode: Option<String>,
+    pub audio_stream_index: Option<u32>,
 }
 
 #[tauri::command]
@@ -35,7 +37,20 @@ pub async fn start_dub_job(
     req: StartDubRequest,
 ) -> Result<String, String> {
     let job_id = Uuid::new_v4().to_string();
-    job_manager.create_job(job_id.clone());
+    let file_name = std::path::Path::new(&req.file_path)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .map(|s| s.to_string());
+    let proj_title = std::path::Path::new(&req.file_path)
+        .file_stem()
+        .and_then(|n| n.to_str())
+        .map(|s| format!("{} Dub", s));
+    let voice_provider = match req.voice_mode.as_deref() {
+        Some("edge_tts") => Some("ONLINE Edge-TTS".to_string()),
+        _ => Some("Local Apple Silicon".to_string()),
+    };
+
+    job_manager.create_job(job_id.clone(), proj_title, file_name, voice_provider);
 
     let jm = job_manager.inner().clone();
     let jid = job_id.clone();
@@ -52,11 +67,19 @@ pub async fn start_dub_job(
             req.target_language,
             req.translation_model,
             req.translation_style,
+            req.voice_mode,
+            req.audio_stream_index,
         )
         .await;
 
         if let Err(e) = result {
-            jm.fail_job(&app_handle, &jid, &e);
+            jm.fail_job(
+                &app_handle,
+                &jid,
+                &e,
+                None,
+                Some("Check execution logs or retry from the saved checkpoint."),
+            );
         }
     });
 
@@ -66,6 +89,21 @@ pub async fn start_dub_job(
 #[tauri::command]
 pub fn get_job_status(job_manager: State<'_, JobManager>, job_id: String) -> Option<JobProgress> {
     job_manager.get_job(&job_id)
+}
+
+#[tauri::command]
+pub fn cancel_dub_job(app: AppHandle, job_manager: State<'_, JobManager>, job_id: String) -> bool {
+    job_manager.cancel_job(&app, &job_id)
+}
+
+#[tauri::command]
+pub fn pause_dub_job(app: AppHandle, job_manager: State<'_, JobManager>, job_id: String) -> bool {
+    job_manager.pause_job(&app, &job_id)
+}
+
+#[tauri::command]
+pub fn resume_dub_job(app: AppHandle, job_manager: State<'_, JobManager>, job_id: String) -> bool {
+    job_manager.resume_job(&app, &job_id)
 }
 
 #[tauri::command]

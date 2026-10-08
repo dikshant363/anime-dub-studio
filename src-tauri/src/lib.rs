@@ -22,6 +22,9 @@ pub fn run() {
             probe_media_file,
             start_dub_job,
             get_job_status,
+            cancel_dub_job,
+            pause_dub_job,
+            resume_dub_job,
             open_in_finder,
             test_apple_intelligence
         ])

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 class SubtitleFormatter:
     """Generates Hindi SRT and stylized ASS subtitle files."""
@@ -21,25 +21,29 @@ class SubtitleFormatter:
         return f"{hours:d}:{minutes:02d}:{secs:02d}.{centis:02d}"
 
     @classmethod
-    def generate_srt(cls, segments: List[Dict[str, Any]], output_path: Path) -> Path:
+    def generate_srt(cls, segments: List[Dict[str, Any]], output_path: Path, text_key: Optional[str] = None) -> Path:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         lines = []
 
         for idx, seg in enumerate(segments, 1):
             start = cls.format_srt_time(float(seg["start_time"]))
             end = cls.format_srt_time(float(seg["end_time"]))
-            text = seg.get("adapted_hindi_text") or seg.get("translated_text") or seg.get("source_text", "")
+            
+            if text_key and text_key in seg:
+                text = seg[text_key]
+            else:
+                text = seg.get("adapted_hinglish_text") or seg.get("adapted_hindi_text") or seg.get("translated_text") or seg.get("source_text", "")
 
             lines.append(str(idx))
             lines.append(f"{start} --> {end}")
-            lines.append(text.strip())
+            lines.append(str(text).strip())
             lines.append("")
 
         output_path.write_text("\n".join(lines), encoding="utf-8")
         return output_path
 
     @classmethod
-    def generate_ass(cls, segments: List[Dict[str, Any]], output_path: Path, title: str = "Anime Dub Subtitles") -> Path:
+    def generate_ass(cls, segments: List[Dict[str, Any]], output_path: Path, title: str = "Anime Dub Subtitles", text_key: Optional[str] = None) -> Path:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         header = f"""[Script Info]
 Title: {title}
@@ -59,9 +63,12 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         for seg in segments:
             start = cls.format_ass_time(float(seg["start_time"]))
             end = cls.format_ass_time(float(seg["end_time"]))
-            text = seg.get("adapted_hindi_text") or seg.get("translated_text") or seg.get("source_text", "")
+            if text_key and text_key in seg:
+                text = seg[text_key]
+            else:
+                text = seg.get("adapted_hinglish_text") or seg.get("adapted_hindi_text") or seg.get("translated_text") or seg.get("source_text", "")
             actor = seg.get("speaker_label", "Character")
-            events.append(f"Dialogue: 0,{start},{end},Default,{actor},0,0,0,,{text.strip()}")
+            events.append(f"Dialogue: 0,{start},{end},Default,{actor},0,0,0,,{str(text).strip()}")
 
         content = header + "\n".join(events) + "\n"
         output_path.write_text(content, encoding="utf-8")

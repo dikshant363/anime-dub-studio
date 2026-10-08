@@ -79,9 +79,11 @@ export default function StudioHome() {
       <header className="border-b border-[#202028] bg-[#0e0e12]/80 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-white text-black flex items-center justify-center font-black text-lg tracking-tighter">
-              AD
-            </div>
+            <img
+              src="/logo.png"
+              alt="Anime Dub Studio Logo"
+              className="w-9 h-9 rounded-xl object-cover shadow-sm ring-1 ring-white/10"
+            />
             <div>
               <span className="font-semibold text-sm tracking-tight">Anime Dub Studio</span>
               <span className="hidden sm:inline-block text-[10px] ml-2 px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-300 font-mono">

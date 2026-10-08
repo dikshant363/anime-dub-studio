@@ -6,6 +6,8 @@ class TranslationResult(BaseModel):
     source_text: str
     translated_text: str
     adapted_hindi: str
+    adapted_hinglish: Optional[str] = None
+    tts_pronunciation_text: Optional[str] = None
     provider: str
     emotion: str = "neutral"
     intensity: float = 0.7

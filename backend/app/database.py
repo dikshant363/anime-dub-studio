@@ -24,6 +24,16 @@ async def get_db():
         finally:
             await session.close()
 
+from sqlalchemy import text
+
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        try:
+            await conn.execute(text("ALTER TABLE dialogue_segments ADD COLUMN adapted_hinglish_text TEXT;"))
+        except Exception:
+            pass
+        try:
+            await conn.execute(text("ALTER TABLE dialogue_segments ADD COLUMN tts_pronunciation_text TEXT;"))
+        except Exception:
+            pass

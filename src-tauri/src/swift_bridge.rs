@@ -32,10 +32,27 @@ pub struct SwiftBridge;
 
 impl SwiftBridge {
     pub fn get_service_path() -> std::path::PathBuf {
+        if let Ok(exe) = std::env::current_exe() {
+            if let Some(dir) = exe.parent() {
+                for relative in &[
+                    "AppleFoundationModelService",
+                    "../Resources/AppleFoundationModelService",
+                    "../Resources/swift/AppleFoundationModelService",
+                ] {
+                    let p = dir.join(relative);
+                    if p.exists() {
+                        return p;
+                    }
+                }
+            }
+        }
+
         for candidate in &[
             "./src-tauri/swift/AppleFoundationModelService",
             "./swift/AppleFoundationModelService",
             "../src-tauri/swift/AppleFoundationModelService",
+            "bin/apple_intelligence_bridge",
+            "./bin/apple_intelligence_bridge",
         ] {
             let p = std::path::PathBuf::from(candidate);
             if p.exists() {

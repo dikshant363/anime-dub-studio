@@ -28,6 +28,10 @@ tests/test_data/*.mp4
 tests/test_data/*.mp3
 tests/test_data/*.wav
 bin/apple_intelligence_bridge
+*.mkv
+*.mp4
+*.dmg
+dist/
 
 # OS
 .DS_Store
@@ -38,3 +42,4 @@ bin/apple_intelligence_bridge
 src-tauri/target/
 src-tauri/swift/AppleFoundationModelService
 frontend/out/
+

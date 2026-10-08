@@ -1,20 +1,24 @@
-# Anime Dub Studio
-> **Local-first AI workstation for creating natural Hindi anime dubs on Apple Silicon & Google Colab.**
+# Anime Dub Studio v1.0
+> **Native Apple Silicon macOS Application for Local-First Japanese Anime & Video → Hindi/Hinglish Dubbing.**
 
-Anime Dub Studio is a production-grade, local-first application designed to transcribe Japanese anime dialogue, identify characters, localize the script into natural, colloquial spoken Hindi, synthesize authentic character voices, synchronize dialogue pacing, master the soundtrack with BGM preservation, and export high-definition dubbed video without cloud subscription fees.
+Anime Dub Studio is a production-grade macOS desktop application designed to transcribe Japanese anime dialogue, cluster and assign characters, localize the script into natural colloquial spoken Hindi or Hinglish, synthesize authentic character voices on-device, synchronize dialogue pacing, master the soundtrack with BGM preservation, and export high-definition dubbed video without cloud subscription fees.
+
+Packaged as a standalone macOS `.app` and `.dmg`, it requires no manual terminal startup, no uvicorn, and no dev servers.
 
 ---
 
 ## Key Features
 
-* **🇯🇵 Japanese → 🇮🇳 Natural Hindi Dubbing:** First-class anime localization engine preserving character personality, emotion, and anime honorifics (avoiding literal, bookish translations).
-* **🍎 Apple Silicon M4 Native:** Accelerated by Apple MLX Metal GPU for speech recognition, on-device Apple Intelligence Foundation Models via the Apple Neural Engine, and zero-RAM overhead execution.
-* **☁️ Optional Google Colab Worker:** Offload intensive batch processing or long episodes to NVIDIA CUDA GPUs (T4 / L4 / A100) with adaptive VRAM model selection.
-* **🎙 Neural Character Voice Engine:** High-fidelity Hindi character voices with pitch, speed, and emotion conditioning using EdgeTTS and offline Piper ONNX runtimes.
-* **⏱ Automated Timing & WSOLA Sync:** Intelligently measures synthesized duration against target video windows, applying WSOLA time-stretching (`atempo`) and Hindi syllable contraction to avoid robotic speech.
-* **🎚 Lossless Video Multiplexing & BGM Ducking:** Masters dubbed audio with EBU R128 loudness normalization (-23 LUFS), background music ducking, and remuxes video bitstreams (`-c:v copy`) with zero video quality loss.
-* **🔍 Automated Quality Assurance (QA):** Automatically scans outputs for untranslated characters, missing speech files, digital clipping, and timing drift, generating studio readiness scores (0-100).
-* **🖥 Modern Studio UI:** Focused Apple-inspired "Create a Dub" modal, persistent real-time job progress monitor, and a multi-track Dubbing Editor.
+* **🖥 Standalone macOS Desktop Application:** Tauri 2 (Rust) + React 19 + TypeScript + Swift native bridge packaged into `Anime Dub Studio.app` and `.dmg` installer with official app icon.
+* **🇯🇵 Japanese → 🇮🇳 Hindi & Hinglish Dubbing:** First-class anime localization engine preserving character personality, emotion, and anime honorifics in Devanagari Hindi or Latin Roman Hinglish (e.g. *"Tum kya kar rahe ho?"*).
+* **🔒 100% Local-First by Default:** On-device speech synthesis using `MacNativeSpeechProvider` (`/usr/bin/say` Indian voices `Rishi`, `Lekha`, `Aman`, `Tara`) operates entirely offline with zero network API dependency.
+* **🌐 Transparent Cloud Option:** Optional Microsoft Edge TTS is strictly labeled `ONLINE / CLOUD FALLBACK • Requires Internet`.
+* **👥 Multi-Character Cast Voice Diversity:** Automatically assigns distinct voice profiles across cast members (e.g. `Lead Protagonist`, `Lead Heroine`, `Supporting Male`, `Supporting Female`); QA fails if cast voices collapse into a single voice.
+* **⏱ Automated Timing & WSOLA Sync:** Intelligently measures synthesized duration against target video windows, applying WSOLA time-stretching (`atempo`) and syllable contraction to avoid robotic speech.
+* **🎚 Lossless Video Multiplexing (`-c:v copy`):** Masters dubbed audio with EBU R128 loudness normalization (-23 LUFS), background music ducking, and remuxes video bitstreams losslessly with zero generational loss.
+* **💾 Checkpoint & Resilient Recovery:** Saves stage checkpoints on disk; UI supports clean `[ Pause ]`, `[ Resume ]`, `[ Cancel ]`, and `[ Retry from checkpoint ]`.
+* **🔍 Automated Quality Assurance (QA):** Automatically scans outputs for untranslated characters, digital clipping, timing drift, and voice diversity.
+
 
 ---
 
