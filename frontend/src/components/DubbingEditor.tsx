@@ -14,7 +14,9 @@ import {
   ArrowLeft,
   Share2,
   Film,
+  Folder,
 } from "lucide-react";
+import { isTauriEnvironment, openInFinder } from "@/lib/tauriBridge";
 
 interface DubbingEditorProps {
   episodeId: string;
@@ -135,6 +137,14 @@ export default function DubbingEditor({ episodeId, onBack }: DubbingEditorProps)
         </div>
 
         <div className="flex items-center gap-3">
+          {isTauriEnvironment() && episode?.exported_video_path && (
+            <button
+              onClick={() => openInFinder(episode.exported_video_path)}
+              className="px-4 py-2 bg-neutral-800 text-white hover:bg-neutral-700 rounded-xl text-sm font-medium transition shadow-lg flex items-center gap-2"
+            >
+              <Folder className="w-4 h-4 text-amber-300" /> Reveal in Finder
+            </button>
+          )}
           <button
             onClick={handleExportDownload}
             className="px-4 py-2 bg-white text-black hover:bg-neutral-200 rounded-xl text-sm font-medium transition shadow-lg flex items-center gap-2"

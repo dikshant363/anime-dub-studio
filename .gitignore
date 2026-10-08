@@ -33,3 +33,8 @@ bin/apple_intelligence_bridge
 .DS_Store
 *.swp
 *.log
+
+# Tauri & Rust
+src-tauri/target/
+src-tauri/swift/AppleFoundationModelService
+frontend/out/

@@ -5,13 +5,14 @@ import { Plus, Sparkles, Film, Cpu, HardDrive, CheckCircle2, Play, Volume2 } fro
 import CreateDubModal from "@/components/CreateDubModal";
 import JobProgressView from "@/components/JobProgressView";
 import DubbingEditor from "@/components/DubbingEditor";
+import { getSystemCapabilities, isTauriEnvironment, SystemCapabilities } from "@/lib/tauriBridge";
 
 export default function StudioHome() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeJob, setActiveJob] = useState<{ jobId: string; episodeId: string; projectId: string } | null>(null);
   const [editingEpisodeId, setEditingEpisodeId] = useState<string | null>(null);
   const [projects, setProjects] = useState<any[]>([]);
-  const [systemStatus, setSystemStatus] = useState<any>(null);
+  const [systemCaps, setSystemCaps] = useState<SystemCapabilities | null>(null);
 
   const fetchProjects = async () => {
     try {
@@ -21,17 +22,14 @@ export default function StudioHome() {
         setProjects(data);
       }
     } catch (e) {
-      console.error(e);
+      console.warn("Local API not reached (desktop standalone mode)");
     }
   };
 
-  const fetchStatus = async () => {
+  const loadCapabilities = async () => {
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/system/status");
-      if (res.ok) {
-        const data = await res.json();
-        setSystemStatus(data);
-      }
+      const caps = await getSystemCapabilities();
+      setSystemCaps(caps);
     } catch (e) {
       console.error(e);
     }
@@ -39,7 +37,7 @@ export default function StudioHome() {
 
   useEffect(() => {
     fetchProjects();
-    fetchStatus();
+    loadCapabilities();
   }, []);
 
   const handleDubCreated = (data: { jobId: string; episodeId: string; projectId: string }) => {
@@ -96,9 +94,21 @@ export default function StudioHome() {
             {/* Apple Silicon Hardware Pill */}
             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#17171e] border border-[#282834] text-xs">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-neutral-300 font-medium">Apple Silicon M4</span>
+              <span className="text-neutral-200 font-medium">
+                {systemCaps ? `${systemCaps.chip_name} (${systemCaps.total_memory_gb.toFixed(0)} GB)` : "Apple Silicon M4 (16 GB)"}
+              </span>
               <span className="text-neutral-500">•</span>
-              <span className="text-neutral-400">On-Device AI</span>
+              <span className="text-neutral-400">
+                {systemCaps?.foundation_models_available ? "Apple Intelligence" : "Local MLX Metal"}
+              </span>
+              {isTauriEnvironment() && (
+                <>
+                  <span className="text-neutral-500">•</span>
+                  <span className="px-1.5 py-0.5 rounded bg-emerald-950/80 border border-emerald-800 text-[10px] text-emerald-300">
+                    macOS Native
+                  </span>
+                </>
+              )}
             </div>
 
             <button

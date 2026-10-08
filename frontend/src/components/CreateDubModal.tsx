@@ -1,7 +1,14 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { Upload, X, ChevronDown, ChevronUp, Sparkles, Volume2, Cpu, Globe, Sliders } from "lucide-react";
+import { Upload, X, ChevronDown, ChevronUp, Sparkles, Volume2, Cpu, Globe, Sliders, AlertTriangle, Film, HardDrive } from "lucide-react";
+import {
+  isTauriEnvironment,
+  pickMediaFile,
+  probeMediaFile,
+  startDubJob,
+  MediaMetadata,
+} from "@/lib/tauriBridge";
 
 interface CreateDubModalProps {
   isOpen: boolean;
@@ -11,6 +18,8 @@ interface CreateDubModalProps {
 
 export default function CreateDubModal({ isOpen, onClose, onDubCreated }: CreateDubModalProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
+  const [mediaMetadata, setMediaMetadata] = useState<MediaMetadata | null>(null);
   const [projectName, setProjectName] = useState("");
   const [sourceLang, setSourceLang] = useState("ja");
   const [targetLang, setTargetLang] = useState("hi");
@@ -32,6 +41,25 @@ export default function CreateDubModal({ isOpen, onClose, onDubCreated }: Create
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
+
+  const handleNativePick = async () => {
+    if (isTauriEnvironment()) {
+      const path = await pickMediaFile();
+      if (path) {
+        setSelectedFilePath(path);
+        const name = path.split("/").pop() || "Episode";
+        if (!projectName) {
+          setProjectName(name.replace(/\.[^/.]+$/, ""));
+        }
+        const meta = await probeMediaFile(path);
+        if (meta) {
+          setMediaMetadata(meta);
+        }
+        return;
+      }
+    }
+    fileInputRef.current?.click();
+  };
 
   const handleFileDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -56,7 +84,7 @@ export default function CreateDubModal({ isOpen, onClose, onDubCreated }: Create
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedFile) {
+    if (!selectedFile && !selectedFilePath) {
       setError("Please select a video or audio file to dub.");
       return;
     }
@@ -64,48 +92,75 @@ export default function CreateDubModal({ isOpen, onClose, onDubCreated }: Create
     setIsSubmitting(true);
     setError(null);
 
-    const formData = new FormData();
-    formData.append("file", selectedFile);
-    formData.append(
-      "options",
-      JSON.stringify({
-        project_name: projectName || selectedFile.name,
-        source_language: sourceLang,
-        target_language: targetLang,
-        speaker_count: speakerCount,
-        voice_mode: voiceMode,
-        translation_model: translationModel,
-        translation_style: translationStyle,
-        emotion_mode: emotionMode,
-        preserve_background: preserveBackground,
-        normalize_loudness: normalizeLoudness,
-        timing_mode: timingMode,
-        worker: worker,
-      })
-    );
-
-    try {
-      const res = await fetch("http://127.0.0.1:8000/api/dub/create", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.detail || "Failed to start dubbing job");
+    // Native macOS Tauri Execution (zero-copy direct on-device processing)
+    if (selectedFilePath && isTauriEnvironment()) {
+      try {
+        const jobId = await startDubJob({
+          filePath: selectedFilePath,
+          sourceLanguage: sourceLang,
+          targetLanguage: targetLang,
+          translationModel,
+          translationStyle,
+        });
+        onDubCreated({
+          jobId,
+          episodeId: `native_${jobId}`,
+          projectId: `proj_${jobId}`,
+        });
+        onClose();
+        return;
+      } catch (err: any) {
+        setError(err.message || "Failed to start native dubbing pipeline");
+        setIsSubmitting(false);
+        return;
       }
+    }
 
-      const data = await res.json();
-      onDubCreated({
-        jobId: data.job_id,
-        episodeId: data.episode_id,
-        projectId: data.project_id,
-      });
-      onClose();
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred.");
-    } finally {
-      setIsSubmitting(false);
+    // HTTP Upload Fallback (for browser/FastAPI worker)
+    if (selectedFile) {
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+      formData.append(
+        "options",
+        JSON.stringify({
+          project_name: projectName || selectedFile.name,
+          source_language: sourceLang,
+          target_language: targetLang,
+          speaker_count: speakerCount,
+          voice_mode: voiceMode,
+          translation_model: translationModel,
+          translation_style: translationStyle,
+          emotion_mode: emotionMode,
+          preserve_background: preserveBackground,
+          normalize_loudness: normalizeLoudness,
+          timing_mode: timingMode,
+          worker: worker,
+        })
+      );
+
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/dub/create", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || "Failed to start dubbing job");
+        }
+
+        const data = await res.json();
+        onDubCreated({
+          jobId: data.job_id,
+          episodeId: data.episode_id,
+          projectId: data.project_id,
+        });
+        onClose();
+      } catch (err: any) {
+        setError(err.message || "An unexpected error occurred.");
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -158,7 +213,7 @@ export default function CreateDubModal({ isOpen, onClose, onDubCreated }: Create
           <div
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleFileDrop}
-            onClick={() => fileInputRef.current?.click()}
+            onClick={handleNativePick}
             className="border-2 border-dashed border-[#2b2b38] hover:border-neutral-500 rounded-2xl p-6 text-center cursor-pointer bg-[#181820]/60 transition group"
           >
             <input
@@ -171,22 +226,52 @@ export default function CreateDubModal({ isOpen, onClose, onDubCreated }: Create
             <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-neutral-800/80 flex items-center justify-center text-neutral-300 group-hover:scale-105 transition">
               <Upload className="w-6 h-6" />
             </div>
-            {selectedFile ? (
-              <div>
-                <p className="text-sm font-medium text-white">{selectedFile.name}</p>
-                <p className="text-xs text-neutral-400 mt-1">
-                  {(selectedFile.size / (1024 * 1024)).toFixed(1)} MB • Ready to dub
+            {selectedFilePath || selectedFile ? (
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-white">
+                  {selectedFilePath ? selectedFilePath.split("/").pop() : selectedFile?.name}
                 </p>
+                {mediaMetadata ? (
+                  <div className="inline-flex flex-wrap items-center justify-center gap-2 text-xs text-neutral-400">
+                    <span className="px-2 py-0.5 rounded bg-neutral-800 font-mono text-neutral-300">
+                      {mediaMetadata.resolution}
+                    </span>
+                    <span>•</span>
+                    <span>{mediaMetadata.duration_secs.toFixed(1)}s</span>
+                    <span>•</span>
+                    <span>{mediaMetadata.fps.toFixed(0)} fps</span>
+                    <span>•</span>
+                    <span>{mediaMetadata.file_size_mb.toFixed(1)} MB</span>
+                    <span>•</span>
+                    <span>{mediaMetadata.audio_channels}ch audio</span>
+                  </div>
+                ) : (
+                  <p className="text-xs text-neutral-400">
+                    {selectedFile ? (selectedFile.size / (1024 * 1024)).toFixed(1) + " MB" : ""} • Ready to dub
+                  </p>
+                )}
+                {mediaMetadata && !mediaMetadata.has_enough_disk_space && (
+                  <div className="mt-2 text-amber-400 text-xs flex items-center justify-center gap-1">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    Warning: Less than 2 GB disk space available
+                  </div>
+                )}
               </div>
             ) : (
               <div>
-                <p className="text-sm font-medium text-neutral-200">Drag & drop or Upload</p>
-                <p className="text-xs text-neutral-400 mt-1">Video or audio • up to 2 GB</p>
+                <p className="text-sm font-medium text-neutral-200">Drag & drop or Click to Select</p>
+                <p className="text-xs text-neutral-400 mt-1">
+                  Native zero-copy video import • MP4, MKV, MOV, WEBM, WAV
+                </p>
                 <button
                   type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleNativePick();
+                  }}
                   className="mt-3 px-4 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg text-xs font-medium transition"
                 >
-                  Upload File
+                  Choose Media File
                 </button>
               </div>
             )}

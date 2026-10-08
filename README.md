@@ -102,7 +102,28 @@ The dubbed video and Hindi subtitles will be generated in:
 
 ---
 
-### 3. Start the Web Studio UI
+### 3. Launch Native macOS Desktop Studio (Tauri 2 + Swift + Rust)
+
+To run Anime Dub Studio as a real native macOS desktop application:
+
+```bash
+# 1. Install root & frontend dependencies
+pnpm install
+
+# 2. Run Desktop App in development mode
+pnpm tauri dev
+
+# 3. Build standalone macOS .app bundle and .dmg installer
+npx tauri build --debug
+```
+
+The compiled native macOS application and installer will be located in:
+* **Application Bundle:** `src-tauri/target/debug/bundle/macos/Anime Dub Studio.app`
+* **Disk Image Installer:** `src-tauri/target/debug/bundle/dmg/Anime Dub Studio_1.0.0_aarch64.dmg`
+
+---
+
+### 4. Start the Web Studio UI (Optional localhost mode)
 
 **Terminal 1 — Backend:**
 ```bash
@@ -111,9 +132,7 @@ The dubbed video and Hindi subtitles will be generated in:
 
 **Terminal 2 — Frontend:**
 ```bash
-cd frontend
-pnpm install --ignore-scripts
-pnpm dev
+pnpm --dir frontend dev
 ```
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
@@ -121,6 +140,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Project Documentation
 
+* [macOS Native Desktop Studio Architecture](docs/MACOS_DESKTOP.md)
 * [Reuse Audit (Existing Open-Source Research)](docs/REUSE_AUDIT.md)
 * [System Architecture Specification](docs/ARCHITECTURE.md)
 * [Dependency & Compatibility Matrix](docs/DEPENDENCY_MATRIX.md)

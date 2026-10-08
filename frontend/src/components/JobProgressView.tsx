@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { CheckCircle2, Circle, Loader2, AlertCircle, ArrowRight } from "lucide-react";
+import { isTauriEnvironment, getJobStatus, notifyUser } from "@/lib/tauriBridge";
 
 interface JobProgressViewProps {
   jobId: string;
@@ -37,25 +38,34 @@ export default function JobProgressView({
 
     const pollJob = async () => {
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/jobs/${jobId}`);
-        if (!res.ok) throw new Error("Could not fetch job status");
-        const data = await res.json();
-        setJob(data);
+        let data: any = null;
+        if (isTauriEnvironment()) {
+          data = await getJobStatus(jobId);
+        } else {
+          const res = await fetch(`http://127.0.0.1:8000/api/jobs/${jobId}`);
+          if (!res.ok) throw new Error("Could not fetch job status");
+          data = await res.json();
+        }
 
-        if (data.status === "COMPLETED") {
-          clearInterval(interval);
-          onFinished(episodeId);
-        } else if (data.status === "FAILED") {
-          clearInterval(interval);
-          setError(data.error_message || "Dubbing pipeline failed.");
+        if (data) {
+          setJob(data);
+
+          if (data.status === "COMPLETED") {
+            clearInterval(interval);
+            notifyUser("Anime Dub Complete", "Hindi anime dubbing pipeline completed with QA check passed!");
+            onFinished(episodeId);
+          } else if (data.status === "FAILED") {
+            clearInterval(interval);
+            setError(data.message || data.error_message || "Dubbing pipeline failed.");
+          }
         }
       } catch (err: any) {
-        setError(err.message);
+        console.warn("Poll job error:", err);
       }
     };
 
     pollJob();
-    interval = setInterval(pollJob, 1500);
+    interval = setInterval(pollJob, 1000);
 
     return () => clearInterval(interval);
   }, [jobId, episodeId, onFinished]);
