@@ -1,0 +1,46 @@
+{
+  "hardware": {
+    "os": "Darwin",
+    "os_release": "27.0.0",
+    "machine": "arm64",
+    "is_apple_silicon": true,
+    "total_ram_gb": 16.0,
+    "python_version": "3.12.14"
+  },
+  "benchmarks": [
+    {
+      "stage": "ASR (Speech Recognition)",
+      "model": "mlx-community/whisper-tiny-mlx",
+      "device": "Apple Silicon M4 GPU (Metal)",
+      "input_duration_s": 4.1,
+      "processing_time_s": 1.94,
+      "real_time_factor": 0.47,
+      "ram_usage_mb": 367.3,
+      "speed_vs_realtime": "2.1x faster than real-time"
+    },
+    {
+      "stage": "Translation & Hindi Adaptation",
+      "model": "macOS SystemLanguageModel",
+      "device": "Apple Neural Engine (On-Device)",
+      "input_text": "\u4f55\u3092\u3057\u3066\u3044\u308b\u3093\u3060\uff1f",
+      "output_text": "\u0915\u094d\u092f\u093e \u0915\u0930 \u0930\u0939\u093e \u0939\u0948?",
+      "processing_time_s": 1.33,
+      "ram_usage_mb": 0.0
+    },
+    {
+      "stage": "TTS (Voice Synthesis)",
+      "model": "hi-IN-MadhurNeural",
+      "device": "Neural Speech Engine",
+      "synthesized_duration_s": 2.232,
+      "processing_time_s": 0.95,
+      "real_time_factor": 0.43,
+      "speed_vs_realtime": "2.3x faster than real-time"
+    },
+    {
+      "stage": "Video Multiplexing",
+      "method": "FFmpeg -c:v copy",
+      "processing_time_s": 0.05,
+      "speed_vs_realtime": "82.4x faster than real-time"
+    }
+  ]
+}
