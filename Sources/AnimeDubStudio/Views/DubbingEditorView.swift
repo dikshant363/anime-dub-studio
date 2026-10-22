@@ -63,9 +63,9 @@ public struct DubbingEditorView: View {
                 .controlSize(.small)
 
                 Button {
-                    viewModel.currentScreen = .exportReport(projectId: projectId, episodeId: episodeId)
+                    viewModel.openFinishedVideo(projectId: projectId, episodeId: episodeId)
                 } label: {
-                    Label("Export Quality Report", systemImage: "chart.bar.doc.horizontal")
+                    Label("View Finished Video", systemImage: "play.rectangle.fill")
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
@@ -178,8 +178,11 @@ public struct DubbingEditorView: View {
                                     onSelect: {
                                         editorVM.selectSegment(at: index)
                                     },
-                                    onPlay: {
+                                    onPlayDubbed: {
                                         editorVM.playSegmentAudio(at: index)
+                                    },
+                                    onPlayOriginal: {
+                                        editorVM.playOriginalSegmentAudio(at: index)
                                     },
                                     onUpdate: { hindi, hinglish, spk, voiceId in
                                         editorVM.updateSegment(index: index, hindi: hindi, hinglish: hinglish, speaker: spk, voiceId: voiceId)
@@ -200,7 +203,8 @@ struct DialogueSegmentRow: View {
     let segment: DialogueSegment
     let isSelected: Bool
     let onSelect: () -> Void
-    let onPlay: () -> Void
+    let onPlayDubbed: () -> Void
+    let onPlayOriginal: () -> Void
     let onUpdate: (String, String, String, String) -> Void
 
     @State private var hindiText: String = ""
@@ -238,12 +242,24 @@ struct DialogueSegmentRow: View {
                     onUpdate(hindiText, hinglishText, segment.speakerLabel, newVoice)
                 }
 
-                Button(action: onPlay) {
-                    Image(systemName: "speaker.wave.2")
-                        .font(.caption)
+                // Dual-Track A/B Auditioning
+                HStack(spacing: 4) {
+                    Button(action: onPlayOriginal) {
+                        Label("JPN", systemImage: "waveform")
+                            .font(.caption2)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.mini)
+                    .help("Audition original Japanese source line")
+
+                    Button(action: onPlayDubbed) {
+                        Label("Dub", systemImage: "speaker.wave.2.fill")
+                            .font(.caption2)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.mini)
+                    .help("Audition dubbed Hindi/Hinglish line")
                 }
-                .buttonStyle(.plain)
-                .help("Play line audio")
             }
 
             // Japanese Source Text

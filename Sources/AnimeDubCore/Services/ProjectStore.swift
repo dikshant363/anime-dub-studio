@@ -32,16 +32,18 @@ public final class ProjectStore: @unchecked Sendable {
     }
 
     public func loadProjects() -> [Project] {
-        guard FileManager.default.fileExists(atPath: projectsFileURL.path),
-              let data = try? Data(contentsOf: projectsFileURL),
-              let projects = try? JSONDecoder().decode([Project].self, from: data) else {
-            return []
+        queue.sync {
+            guard FileManager.default.fileExists(atPath: projectsFileURL.path),
+                  let data = try? Data(contentsOf: projectsFileURL),
+                  let projects = try? JSONDecoder().decode([Project].self, from: data) else {
+                return []
+            }
+            return projects
         }
-        return projects
     }
 
     public func saveProjects(_ projects: [Project]) {
-        queue.async(flags: .barrier) {
+        queue.sync(flags: .barrier) {
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             if let data = try? encoder.encode(projects) {
@@ -86,5 +88,25 @@ public final class ProjectStore: @unchecked Sendable {
             return []
         }
         return segments
+    }
+
+    public func saveCharacterProfiles(_ profiles: [CharacterProfile], for projectId: String) {
+        let file = projectDirectory(for: projectId).appendingPathComponent("characters.json")
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        if let data = try? encoder.encode(profiles) {
+            try? data.write(to: file, options: .atomic)
+        }
+    }
+
+    public func loadCharacterProfiles(for projectId: String) -> [CharacterProfile] {
+        let file = projectDirectory(for: projectId).appendingPathComponent("characters.json")
+        guard FileManager.default.fileExists(atPath: file.path),
+              let data = try? Data(contentsOf: file),
+              let profiles = try? JSONDecoder().decode([CharacterProfile].self, from: data),
+              !profiles.isEmpty else {
+            return CharacterProfile.defaultCast
+        }
+        return profiles
     }
 }

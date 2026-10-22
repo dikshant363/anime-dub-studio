@@ -9,6 +9,7 @@ public enum StudioScreen: Equatable {
     case processing(jobId: String)
     case editor(projectId: String, episodeId: String)
     case exportReport(projectId: String, episodeId: String)
+    case finishedVideo(projectId: String, episodeId: String)
 }
 
 @MainActor
@@ -97,7 +98,7 @@ public final class StudioViewModel: ObservableObject {
 
                 self.activeQAReport = qa
                 self.refreshProjects()
-                self.currentScreen = .exportReport(projectId: projId, episodeId: epId)
+                self.currentScreen = .finishedVideo(projectId: projId, episodeId: epId)
             } catch {
                 self.activeJob?.status = .failed
                 self.activeJob?.errorMessage = error.localizedDescription
@@ -126,6 +127,10 @@ public final class StudioViewModel: ObservableObject {
 
     public func openEditor(projectId: String, episodeId: String) {
         currentScreen = .editor(projectId: projectId, episodeId: episodeId)
+    }
+
+    public func openFinishedVideo(projectId: String, episodeId: String) {
+        currentScreen = .finishedVideo(projectId: projectId, episodeId: episodeId)
     }
 
     public func deleteProject(_ project: Project) {

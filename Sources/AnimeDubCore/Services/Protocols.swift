@@ -119,8 +119,66 @@ public protocol SpeechSynthesisProviderProtocol: Sendable {
         to outputURL: URL,
         voiceId: String,
         speedRate: Double,
-        pitchPercent: Double
+        pitchPercent: Double,
+        speakerSimilarity: Double,
+        accentMode: AccentPreservationMode,
+        targetNaturalness: Double
     ) async throws -> SynthesisResult
+
+    func previewVoice(
+        voiceId: String,
+        text: String,
+        to outputURL: URL,
+        speedRate: Double,
+        pitchPercent: Double,
+        speakerSimilarity: Double,
+        accentMode: AccentPreservationMode
+    ) async throws -> SynthesisResult
+}
+
+public extension SpeechSynthesisProviderProtocol {
+    func synthesize(
+        text: String,
+        hindiText: String?,
+        to outputURL: URL,
+        voiceId: String,
+        speedRate: Double = 1.0,
+        pitchPercent: Double = 0.0
+    ) async throws -> SynthesisResult {
+        try await synthesize(
+            text: text,
+            hindiText: hindiText,
+            to: outputURL,
+            voiceId: voiceId,
+            speedRate: speedRate,
+            pitchPercent: pitchPercent,
+            speakerSimilarity: 80.0,
+            accentMode: .balanced,
+            targetNaturalness: 85.0
+        )
+    }
+
+    func previewVoice(
+        voiceId: String,
+        text: String,
+        to outputURL: URL,
+        speedRate: Double = 1.0,
+        pitchPercent: Double = 0.0,
+        speakerSimilarity: Double = 80.0,
+        accentMode: AccentPreservationMode = .balanced
+    ) async throws -> SynthesisResult {
+        try await synthesize(
+            text: text,
+            hindiText: nil,
+            to: outputURL,
+            voiceId: voiceId,
+            speedRate: speedRate,
+            pitchPercent: pitchPercent,
+            speakerSimilarity: speakerSimilarity,
+            accentMode: accentMode,
+            targetNaturalness: 85.0
+        )
+    }
 }
 
 public protocol DialogueTimingServiceProtocol: Sendable {

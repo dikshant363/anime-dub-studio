@@ -106,6 +106,33 @@ public final class DubbingEditorViewModel: ObservableObject {
         sound?.play()
     }
 
+    public func playOriginalSegmentAudio(at index: Int) {
+        guard index >= 0 && index < segments.count else { return }
+        let seg = segments[index]
+        let epDir = projectStore.episodeDirectory(for: projectId, episodeId: episodeId)
+        let masterWav = epDir.appendingPathComponent("audio/master_audio.wav")
+        let sourcePath = FileManager.default.fileExists(atPath: masterWav.path) ? masterWav.path : (episode?.sourceMediaPath ?? "")
+        guard FileManager.default.fileExists(atPath: sourcePath) else { return }
+
+        let sliceURL = FileManager.default.temporaryDirectory.appendingPathComponent("orig_seg_\(seg.segmentIndex)_\(UUID().uuidString).wav")
+        Task {
+            let duration = max(0.1, seg.endTime - seg.startTime)
+            let _ = try? await ProcessRunner.run(executable: "ffmpeg", arguments: [
+                "-y", "-ss", "\(seg.startTime)",
+                "-t", "\(duration)",
+                "-i", sourcePath,
+                "-acodec", "pcm_s16le",
+                "-ar", "24000",
+                "-ac", "1",
+                sliceURL.path
+            ])
+            await MainActor.run {
+                let sound = NSSound(contentsOf: sliceURL, byReference: true)
+                sound?.play()
+            }
+        }
+    }
+
     public func saveChanges() {
         projectStore.saveDialogueSegments(segments, for: episodeId, in: projectId)
     }

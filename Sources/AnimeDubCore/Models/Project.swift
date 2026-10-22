@@ -54,6 +54,31 @@ public enum VoiceEngineMode: String, Codable, CaseIterable, Sendable {
     }
 }
 
+public enum AccentPreservationMode: String, Codable, CaseIterable, Sendable {
+    case preserveOriginal = "preserve_original"
+    case balanced = "balanced"
+    case naturalTarget = "natural_target"
+
+    public var displayName: String {
+        switch self {
+        case .preserveOriginal: return "Preserve Original Accent (Source Vocal Timbre)"
+        case .balanced: return "Balanced (Recognizable Voice + Natural Speech)"
+        case .naturalTarget: return "Natural Hindi/Hinglish (Max Intelligibility)"
+        }
+    }
+
+    public var description: String {
+        switch self {
+        case .preserveOriginal:
+            return "Prioritizes source-speaker acoustic characteristics and Japanese cadence. Recommended for expressive anime drama."
+        case .balanced:
+            return "Maintains recognizable character vocal identity while targeting natural spoken Hindi/Hinglish prosody."
+        case .naturalTarget:
+            return "Prioritizes target-language phonetics, clear diction, and natural colloquial flow for maximum audience comprehension."
+        }
+    }
+}
+
 public struct AudioStreamMetadata: Codable, Identifiable, Hashable, Sendable {
     public var id: Int { index }
     public let index: Int
@@ -130,6 +155,9 @@ public struct DubOptions: Codable, Sendable {
     public var voiceMode: VoiceEngineMode
     public var preserveBackgroundAudio: Bool
     public var normalizeLoudness: Bool
+    public var speakerSimilarity: Double // 0 to 100
+    public var targetNaturalness: Double // 0 to 100
+    public var accentPreservation: AccentPreservationMode
 
     public init(
         sourceLanguage: String = "ja",
@@ -139,7 +167,10 @@ public struct DubOptions: Codable, Sendable {
         translationStyle: TranslationStyle = .naturalAnime,
         voiceMode: VoiceEngineMode = .macNative,
         preserveBackgroundAudio: Bool = true,
-        normalizeLoudness: Bool = true
+        normalizeLoudness: Bool = true,
+        speakerSimilarity: Double = 80.0,
+        targetNaturalness: Double = 85.0,
+        accentPreservation: AccentPreservationMode = .balanced
     ) {
         self.sourceLanguage = sourceLanguage
         self.targetLanguage = targetLanguage
@@ -149,6 +180,9 @@ public struct DubOptions: Codable, Sendable {
         self.voiceMode = voiceMode
         self.preserveBackgroundAudio = preserveBackgroundAudio
         self.normalizeLoudness = normalizeLoudness
+        self.speakerSimilarity = speakerSimilarity
+        self.targetNaturalness = targetNaturalness
+        self.accentPreservation = accentPreservation
     }
 }
 
@@ -194,6 +228,10 @@ public struct Episode: Codable, Identifiable, Sendable {
     public var subtitleAssPath: String?
     public var exportedVideoPath: String?
     public var qaScore: Double?
+    public var numSpeakers: Int
+    public var targetLanguageDisplayName: String
+    public var fileSizeBytes: Int64
+    public var audioTrackConfig: String
     public var status: String
 
     public init(
@@ -210,6 +248,10 @@ public struct Episode: Codable, Identifiable, Sendable {
         subtitleAssPath: String? = nil,
         exportedVideoPath: String? = nil,
         qaScore: Double? = nil,
+        numSpeakers: Int = 0,
+        targetLanguageDisplayName: String = "Hinglish",
+        fileSizeBytes: Int64 = 0,
+        audioTrackConfig: String = "48kHz Stereo AAC, EBU R128 -23 LUFS",
         status: String = "PENDING"
     ) {
         self.id = id
@@ -225,6 +267,10 @@ public struct Episode: Codable, Identifiable, Sendable {
         self.subtitleAssPath = subtitleAssPath
         self.exportedVideoPath = exportedVideoPath
         self.qaScore = qaScore
+        self.numSpeakers = numSpeakers
+        self.targetLanguageDisplayName = targetLanguageDisplayName
+        self.fileSizeBytes = fileSizeBytes
+        self.audioTrackConfig = audioTrackConfig
         self.status = status
     }
 }

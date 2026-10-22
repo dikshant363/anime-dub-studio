@@ -248,9 +248,11 @@ public final class JobOrchestrator: @unchecked Sendable {
 
         // Setup character map
         var characterMap: [String: CharacterProfile] = [:]
-        for profile in CharacterProfile.defaultCast {
+        let activeCast = projectStore.loadCharacterProfiles(for: project.id)
+        for profile in activeCast {
             characterMap[profile.speakerTag] = profile
         }
+        projectStore.saveCharacterProfiles(Array(characterMap.values), for: project.id)
 
         // -------------------------------------------------------------
         // Stage 4: Translation & Hinglish Adaptation
@@ -360,7 +362,10 @@ public final class JobOrchestrator: @unchecked Sendable {
                     to: segAudioURL,
                     voiceId: char.voiceId,
                     speedRate: char.speedRate,
-                    pitchPercent: char.pitchPercent
+                    pitchPercent: char.pitchPercent,
+                    speakerSimilarity: options.speakerSimilarity,
+                    accentMode: options.accentPreservation,
+                    targetNaturalness: options.targetNaturalness
                 )
                 let rawDur = synthRes.duration
                 let ratio = rawDur / max(0.1, targetDur)
@@ -491,6 +496,12 @@ public final class JobOrchestrator: @unchecked Sendable {
         updatedEp.subtitleAssPath = assURL.path
         updatedEp.exportedVideoPath = finalVideoURL.path
         updatedEp.qaScore = qaReport.score
+        let videoSize = (try? FileManager.default.attributesOfItem(atPath: finalVideoURL.path)[.size] as? NSNumber)?.int64Value ?? 0
+        updatedEp.fileSizeBytes = videoSize
+        let distinctSpeakers = Set(dialogueSegments.map { $0.speakerLabel })
+        updatedEp.numSpeakers = max(1, distinctSpeakers.count)
+        updatedEp.targetLanguageDisplayName = options.targetLanguage.displayName
+        updatedEp.audioTrackConfig = "48kHz Stereo AAC, EBU R128 -23 LUFS"
         updatedEp.status = "COMPLETED"
 
         var updatedProj = project

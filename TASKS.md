@@ -75,12 +75,34 @@ This document tracks all engineering deliverables, architecture milestones, and 
 | **Hinglish Localization Tests** | 4 tests | `DONE` (PASS) | 0.003s |
 | **Dialogue Timing & Subtitle Tests** | 2 tests | `DONE` (PASS) | 0.002s |
 | **Pipeline Integration Tests** | 2 tests | `DONE` (PASS) | 5.328s |
-| **Full Episode Real Video Dubbing** | 1 test | `DONE` (PASS) | 281.956s |
-| **Total Automated Coverage** | **24 tests in 7 suites** | **100% PASS** | **287.29s** |
+| **Speaker Similarity & Accent Tests** | 4 tests | `DONE` (PASS) | 0.577s |
+| **Finished-Video Workflow Tests** | 3 tests | `DONE` (PASS) | 0.002s |
+| **Full Episode Real Video Dubbing** | 1 test | `DONE` (PASS) | 283.69s |
+| **Total Automated Coverage** | **31 tests in 9 suites** | **100% PASS** | **289.60s** |
 
 ---
 
-## 6. Packaging, Release & Distribution
+## 6. Speaker-Preserving Dubbing & Finished-Video Workflow
+
+| Task | Scope | Status | Verification Evidence |
+| :--- | :--- | :---: | :--- |
+| **Speaker Similarity Slider (0–100)** | Acoustic formant shaping, pitch conditioning, and EQ filter chains (`equalizer=f=3200`, `equalizer=f=220`) | `DONE` | Unit tests verify filter generation and audio synthesis. |
+| **Target Naturalness Slider (0–100)** | Prosodic cadence modulation balancing source anime pacing with natural Hindi delivery | `DONE` | Unit tests verify dynamic WPM adjustment. |
+| **Accent Preservation Presets** | 3 distinct presets (`preserveOriginal`, `balanced`, `naturalTarget`) with specific acoustic filter chains | `DONE` | Mode metadata and filter verification in unit test suite. |
+| **Cast Voice Auditioning** | Pre-dub voice auditioning with live on-device speech preview and playback | `DONE` | Interactive `[Audition]` buttons in `CreateDubSheet`. |
+| **Character Consistency Persistence** | Save and load character profiles across runs via `ProjectStore` | `DONE` | Verified by `SpeakerSimilarityAndAccentTests`. |
+| **Finished Video Result Screen** | Dedicated post-render review screen (`FinishedVideoResultView`) following Apple HIG | `DONE` | Integrated into `StudioContentView` and project cards. |
+| **Embedded Playable Video Player** | Native `AVPlayer` preview with play/pause, seek, volume, and fullscreen support | `DONE` | Implemented in `FinishedVideoResultView`. |
+| **Dual-Track A/B Audio Switch** | Seamless one-click toggle between Master Dubbed and Original Japanese audio without losing time | `DONE` | Implemented with zero playback position drift. |
+| **Segment-Level A/B Audition** | Dialogue row buttons in `DubbingEditorView` for both `[JPN]` source and `[Dub]` line audio | `DONE` | Verified in `DubbingEditorView`. |
+| **Project Re-Editability ("Edit in Studio")** | Reopen full project state in editor with 100% segments and character cast preserved | `DONE` | Verified by `FinishedVideoWorkflowTests`. |
+| **Native macOS Save Panel** | Export master video via `NSSavePanel` with destination collision avoidance | `DONE` | Implemented with native AppKit panels. |
+| **Audio-Only & Subtitle Export** | Standalone WAV/AAC and SRT/ASS file extraction via `NSSavePanel` | `DONE` | Verified by `FinishedVideoWorkflowTests`. |
+| **Re-export with Modified Settings** | Re-render mix with altered similarity/accent settings using cached ASR/translation | `DONE` | `ReExportSheet` with non-blocking async execution. |
+
+---
+
+## 7. Packaging, Release & Distribution
 
 | Task | Scope | Status | Verification Evidence |
 | :--- | :--- | :---: | :--- |

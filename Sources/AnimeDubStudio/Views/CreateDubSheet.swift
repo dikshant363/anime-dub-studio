@@ -16,6 +16,10 @@ public struct CreateDubSheet: View {
     @State private var selectedAudioStreamIndex: Int? = nil
     @State private var preserveBGM: Bool = true
     @State private var normalizeLoudness: Bool = true
+    @State private var speakerSimilarity: Double = 80.0
+    @State private var targetNaturalness: Double = 85.0
+    @State private var accentPreservation: AccentPreservationMode = .balanced
+    @State private var auditioningVoice: String? = nil
 
     @State private var isProbing: Bool = false
     @State private var probedMetadata: MediaMetadata?
@@ -195,9 +199,9 @@ public struct CreateDubSheet: View {
 
                     Divider()
 
-                    // 4. Voice Engine
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Speech Synthesis Engine")
+                    // 4. Voice Engine & Speaker Similarity Controls
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text("Speech Synthesis & Voice Conditioning")
                             .font(.headline)
 
                         Picker("Voice Engine", selection: $voiceMode) {
@@ -208,14 +212,109 @@ public struct CreateDubSheet: View {
                         .pickerStyle(.radioGroup)
 
                         if voiceMode == .macNative {
-                            HStack(spacing: 8) {
-                                Image(systemName: "checkmark.shield.fill")
-                                    .foregroundStyle(.green)
-                                Text("Uses on-device Indian cast voices: Rishi (Lead M), Lekha (Lead F), Aman (Rival M), Tara (Mentor F). Zero network latency, zero cloud fees.")
+                            // Speaker Similarity Slider (0 - 100)
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack {
+                                    Text("Speaker Similarity")
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                    Spacer()
+                                    Text("\(Int(speakerSimilarity))%")
+                                        .font(.caption)
+                                        .fontWeight(.bold)
+                                        .foregroundStyle(.tint)
+                                }
+                                Slider(value: $speakerSimilarity, in: 0...100, step: 1.0)
+                                Text("Applies acoustic formant shaping and pitch conditioning to converge toward source vocal timbre.")
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
                             }
-                            .padding(.top, 2)
+                            .padding(12)
+                            .background(Color(NSColor.controlBackgroundColor))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                            // Target Naturalness Slider (0 - 100)
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack {
+                                    Text("Target Language Naturalness")
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                    Spacer()
+                                    Text("\(Int(targetNaturalness))%")
+                                        .font(.caption)
+                                        .fontWeight(.bold)
+                                        .foregroundStyle(.tint)
+                                }
+                                Slider(value: $targetNaturalness, in: 0...100, step: 1.0)
+                                Text("Balances anime delivery pacing against natural spoken Hindi/Hinglish cadence.")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(12)
+                            .background(Color(NSColor.controlBackgroundColor))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                            // Accent Preservation Presets
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Accent Preservation Preset")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+
+                                Picker("", selection: $accentPreservation) {
+                                    ForEach(AccentPreservationMode.allCases, id: \.self) { mode in
+                                        Text(mode.displayName).tag(mode)
+                                    }
+                                }
+                                .pickerStyle(.radioGroup)
+
+                                Text(accentPreservation.description)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(12)
+                            .background(Color(NSColor.controlBackgroundColor))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                            // Character Cast Preview & Auditioning
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Cast Audition & Voice Preview")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+
+                                VStack(spacing: 8) {
+                                    AuditionVoiceRow(
+                                        name: "Rishi",
+                                        role: "Lead Male Protagonist",
+                                        sampleText: "Hum haar nahi maan sakte! Aage badho!",
+                                        isAuditioning: auditioningVoice == "Rishi",
+                                        onAudition: { auditionVoice(voiceId: "Rishi", sampleText: "Hum haar nahi maan sakte! Aage badho!") }
+                                    )
+                                    AuditionVoiceRow(
+                                        name: "Lekha",
+                                        role: "Lead Female Heroine",
+                                        sampleText: "Dhyan se suno, abhi sab theek ho jayega.",
+                                        isAuditioning: auditioningVoice == "Lekha",
+                                        onAudition: { auditionVoice(voiceId: "Lekha", sampleText: "Dhyan se suno, abhi sab theek ho jayega.") }
+                                    )
+                                    AuditionVoiceRow(
+                                        name: "Aman",
+                                        role: "Supporting / Commander",
+                                        sampleText: "Mission complete karne ke liye ready raho.",
+                                        isAuditioning: auditioningVoice == "Aman",
+                                        onAudition: { auditionVoice(voiceId: "Aman", sampleText: "Mission complete karne ke liye ready raho.") }
+                                    )
+                                    AuditionVoiceRow(
+                                        name: "Tara",
+                                        role: "Supporting Female / Mentor",
+                                        sampleText: "Chalo dekhte hain kisme kitna dum hai.",
+                                        isAuditioning: auditioningVoice == "Tara",
+                                        onAudition: { auditionVoice(voiceId: "Tara", sampleText: "Chalo dekhte hain kisme kitna dum hai.") }
+                                    )
+                                }
+                            }
+                            .padding(12)
+                            .background(Color(NSColor.controlBackgroundColor))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
                     }
 
@@ -261,7 +360,10 @@ public struct CreateDubSheet: View {
                         translationStyle: translationStyle,
                         voiceMode: voiceMode,
                         preserveBackgroundAudio: preserveBGM,
-                        normalizeLoudness: normalizeLoudness
+                        normalizeLoudness: normalizeLoudness,
+                        speakerSimilarity: speakerSimilarity,
+                        targetNaturalness: targetNaturalness,
+                        accentPreservation: accentPreservation
                     )
                     isPresented = false
                     viewModel.createAndStartDub(
@@ -317,5 +419,84 @@ public struct CreateDubSheet: View {
                 }
             }
         }
+    }
+
+    private func auditionVoice(voiceId: String, sampleText: String) {
+        auditioningVoice = voiceId
+        Task {
+            let tempDir = FileManager.default.temporaryDirectory
+            let outURL = tempDir.appendingPathComponent("audition_\(voiceId)_\(UUID().uuidString).wav")
+            let provider = SpeechSynthesisProvider()
+            do {
+                let res = try await provider.previewVoice(
+                    voiceId: voiceId,
+                    text: sampleText,
+                    to: outURL,
+                    speakerSimilarity: speakerSimilarity,
+                    accentMode: accentPreservation
+                )
+                await MainActor.run {
+                    self.auditioningVoice = nil
+                    let sound = NSSound(contentsOf: res.audioURL, byReference: true)
+                    sound?.play()
+                }
+            } catch {
+                await MainActor.run {
+                    self.auditioningVoice = nil
+                }
+            }
+        }
+    }
+}
+
+struct AuditionVoiceRow: View {
+    let name: String
+    let role: String
+    let sampleText: String
+    let isAuditioning: Bool
+    let onAudition: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "person.wave.2.fill")
+                .font(.headline)
+                .foregroundStyle(.tint)
+                .frame(width: 24)
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(name)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                    Text("• \(role)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                Text("\"\(sampleText)\"")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+            }
+
+            Spacer()
+
+            Button(action: onAudition) {
+                HStack(spacing: 4) {
+                    if isAuditioning {
+                        ProgressView().controlSize(.mini)
+                    } else {
+                        Image(systemName: "play.circle.fill")
+                    }
+                    Text("Audition")
+                        .font(.caption)
+                }
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .disabled(isAuditioning)
+        }
+        .padding(8)
+        .background(Color(NSColor.windowBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 }

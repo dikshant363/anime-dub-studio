@@ -175,6 +175,10 @@ public struct ProjectHomeView: View {
                                     if let firstEp = project.episodes.first {
                                         viewModel.openEditor(projectId: project.id, episodeId: firstEp.id)
                                     }
+                                } onOpenResult: {
+                                    if let firstEp = project.episodes.first {
+                                        viewModel.openFinishedVideo(projectId: project.id, episodeId: firstEp.id)
+                                    }
                                 } onDelete: {
                                     viewModel.deleteProject(project)
                                 }
@@ -194,6 +198,7 @@ public struct ProjectHomeView: View {
 struct ProjectCardView: View {
     let project: Project
     let onOpen: () -> Void
+    let onOpenResult: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
@@ -240,8 +245,18 @@ struct ProjectCardView: View {
                 .foregroundStyle(.secondary)
                 .help("Delete Project")
 
+                if let ep = project.episodes.first, ep.exportedVideoPath != nil {
+                    Button(action: onOpenResult) {
+                        Label("Result", systemImage: "play.rectangle.fill")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .help("View finished video result, QA scorecard, and exports")
+                }
+
                 Button(action: onOpen) {
-                    Label("Open Editor", systemImage: "play.circle.fill")
+                    Label("Editor", systemImage: "slider.horizontal.3")
                         .font(.caption)
                         .fontWeight(.semibold)
                 }

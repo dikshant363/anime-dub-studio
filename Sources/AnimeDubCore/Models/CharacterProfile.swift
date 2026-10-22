@@ -10,6 +10,9 @@ public struct CharacterProfile: Codable, Identifiable, Sendable {
     public var speakingStyle: String
     public var speedRate: Double
     public var pitchPercent: Double
+    public var originalPitchF0: Double?
+    public var spectralCentroid: Double?
+    public var speakerSimilarity: Double
 
     public init(
         speakerTag: String,
@@ -19,7 +22,10 @@ public struct CharacterProfile: Codable, Identifiable, Sendable {
         personality: String = "natural",
         speakingStyle: String = "casual",
         speedRate: Double = 1.0,
-        pitchPercent: Double = 0.0
+        pitchPercent: Double = 0.0,
+        originalPitchF0: Double? = nil,
+        spectralCentroid: Double? = nil,
+        speakerSimilarity: Double = 80.0
     ) {
         self.speakerTag = speakerTag
         self.name = name
@@ -29,6 +35,9 @@ public struct CharacterProfile: Codable, Identifiable, Sendable {
         self.speakingStyle = speakingStyle
         self.speedRate = speedRate
         self.pitchPercent = pitchPercent
+        self.originalPitchF0 = originalPitchF0
+        self.spectralCentroid = spectralCentroid
+        self.speakerSimilarity = speakerSimilarity
     }
 
     public static let defaultCast: [CharacterProfile] = [

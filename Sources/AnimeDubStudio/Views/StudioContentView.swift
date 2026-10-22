@@ -16,8 +16,8 @@ public struct StudioContentView: View {
                 LiveProcessingView(viewModel: viewModel)
             case .editor(let projId, let epId):
                 DubbingEditorView(viewModel: viewModel, projectId: projId, episodeId: epId)
-            case .exportReport(let projId, let epId):
-                ExportQualitySheet(viewModel: viewModel, projectId: projId, episodeId: epId)
+            case .finishedVideo(let projId, let epId), .exportReport(let projId, let epId):
+                FinishedVideoResultView(viewModel: viewModel, projectId: projId, episodeId: epId)
             }
         }
         .frame(minWidth: 1024, minHeight: 700)
