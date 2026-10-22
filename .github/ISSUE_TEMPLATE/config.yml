@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🔒 Security Vulnerability Report
+    url: https://github.com/dikshant363/anime-dub-studio/security/advisories/new
+    about: Please report security and privacy vulnerabilities privately via GitHub Security Advisories rather than public issues.
+  - name: 💬 Community Discussions & Questions
+    url: https://github.com/dikshant363/anime-dub-studio/discussions
+    about: Ask questions, share dubbing workflows, or discuss anime translation techniques.

@@ -1,0 +1,38 @@
+name: Feature Request
+description: Suggest an enhancement, new voice provider, or workflow improvement.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem-statement
+    attributes:
+      label: Problem Statement / Motivation
+      description: Is your feature request related to a problem or workflow limitation?
+      placeholder: I'm always frustrated when trying to customize subtitle font styles...
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see implemented.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives-considered
+    attributes:
+      label: Alternatives Considered
+      description: Describe any alternative solutions or features you've considered.
+  - type: dropdown
+    id: target-area
+    attributes:
+      label: Target Architecture Area
+      options:
+        - "SwiftUI & Studio UI"
+        - "Speech Synthesis & Voice Modeling"
+        - "Translation & Hinglish Localization"
+        - "Media Extraction & Audio Mastering"
+        - "Export & Results Screen"
+        - "Performance & Memory"
+    validations:
+      required: true

@@ -1,0 +1,38 @@
+name: Performance Issue
+description: Report high memory usage, thermal throttling, slow synthesis, or audio pipeline latency.
+title: "[Perf]: "
+labels: ["performance"]
+body:
+  - type: textarea
+    id: performance-summary
+    attributes:
+      label: Performance Issue Summary
+      description: What operation is bottlenecked or consuming excessive resources?
+      placeholder: Audio mixing of a 90-minute video causes memory to exceed 2GB...
+    validations:
+      required: true
+  - type: input
+    id: media-specs
+    attributes:
+      label: Input Media Specifications
+      description: Video resolution, codec, duration, and audio track count.
+      placeholder: 1080p HEVC 23.98fps, 2h 15m duration, dual Opus audio
+    validations:
+      required: true
+  - type: textarea
+    id: measured-metrics
+    attributes:
+      label: Measured Metrics
+      description: Resident memory (RSS), CPU %, Activity Monitor stats, or pipeline execution time.
+    validations:
+      required: true
+  - type: dropdown
+    id: hardware-profile
+    attributes:
+      label: Hardware Profile
+      options:
+        - "M-Series Mac (8GB Unified Memory)"
+        - "M-Series Mac (16GB Unified Memory)"
+        - "M-Series Mac (24GB+ Unified Memory)"
+    validations:
+      required: true

@@ -4,7 +4,7 @@ Thank you for your interest in contributing to Anime Dub Studio! We welcome comm
 
 ## Code of Conduct
 
-Please be respectful, collaborative, and constructive when opening issues, participating in discussions, or submitting pull requests.
+All contributors and maintainers are expected to adhere to our [Code of Conduct](CODE_OF_CONDUCT.md). Please be respectful, collaborative, and constructive when opening issues, participating in discussions, or submitting pull requests.
 
 ## Architecture & Technology Stack
 

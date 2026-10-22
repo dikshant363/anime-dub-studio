@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.1.1] - 2026-10-23
+
+### Speaker-Preserving Dubbing, Truthful Capabilities & Finished-Video Studio
+
+### Added
+- **Speaker Similarity & Naturalness Controls:** Independent user sliders for Speaker Similarity (0–100%) and Target Naturalness (0–100%) with 3 Accent Preservation presets (*Preserve Original Accent*, *Balanced*, *Natural Hindi/Hinglish*).
+- **Truthful Speech Synthesis Capabilities Model:** Introduced `SpeechSynthesisCapabilities` protocol declaration transparently disclosing acoustic presence shaping and Indian cast allocation without false voice cloning claims.
+- **Reference Audio Extraction & Provenance:** Automated Stage 3 extraction of clean reference audio slices (`voices/ref_<tag>.wav`) from the source dialogue, storing duration, provenance, and assignment confidence in `CharacterProfile`.
+- **Character Cast Manager Sheet:** Native Studio sheet in `DubbingEditorView` for inspecting character reference clips and reassigning voices across the cast.
+- **Dedicated Finished-Video Results Screen (`FinishedVideoResultView`):** Post-render workspace featuring playable `AVPlayer` preview, dual-track A/B audio switcher (*Dubbed* vs *Original Japanese*), technical specifications grid, 5-pillar QA scorecard, and native macOS export actions.
+- **Granular Signature Cache Invalidation:** Segment signature hashing (`seg_%03d.sig`) invalidates and re-synthesizes only modified dialogue lines during Studio re-edits, eliminating redundant transcription and re-processing.
+- **Automated Test Coverage:** Added `SpeakerSimilarityAndAccentTests`, `FinishedVideoWorkflowTests`, and `ProviderCapabilitiesAndCacheTests` (34 total tests passing).
+
+---
+
 ## [2.0.0] - 2026-10-23
 
 ### Major Architecture Milestone: Native Swift macOS Rewrite & Hardening
@@ -49,6 +64,21 @@ Anime Dub Studio 2.0 is a complete ground-up rewrite from the legacy hybrid Pyth
   - Removed Tauri 2 / Rust desktop shell and Cargo dependencies (`src-tauri/`).
   - Removed Python virtual environment (`.venv/`), pycache, and notebooks.
   - Removed obsolete development servers, shell bootstrap scripts, and package manifests.
+
+---
+
+## [2.1.1] - 2026-10-23
+
+### Speaker-Preserving Dubbing, Truthful Capabilities & Finished-Video Studio
+
+### Added
+- **Speaker Similarity & Naturalness Controls:** Independent user sliders for Speaker Similarity (0–100%) and Target Naturalness (0–100%) with 3 Accent Preservation presets (*Preserve Original Accent*, *Balanced*, *Natural Hindi/Hinglish*).
+- **Truthful Speech Synthesis Capabilities Model:** Introduced `SpeechSynthesisCapabilities` protocol declaration transparently disclosing acoustic presence shaping and Indian cast allocation without false voice cloning claims.
+- **Reference Audio Extraction & Provenance:** Automated Stage 3 extraction of clean reference audio slices (`voices/ref_<tag>.wav`) from the source dialogue, storing duration, provenance, and assignment confidence in `CharacterProfile`.
+- **Character Cast Manager Sheet:** Native Studio sheet in `DubbingEditorView` for inspecting character reference clips and reassigning voices across the cast.
+- **Dedicated Finished-Video Results Screen (`FinishedVideoResultView`):** Post-render workspace featuring playable `AVPlayer` preview, dual-track A/B audio switcher (*Dubbed* vs *Original Japanese*), technical specifications grid, 5-pillar QA scorecard, and native macOS export actions.
+- **Granular Signature Cache Invalidation:** Segment signature hashing (`seg_%03d.sig`) invalidates and re-synthesizes only modified dialogue lines during Studio re-edits, eliminating redundant transcription and re-processing.
+- **Automated Test Coverage:** Added `SpeakerSimilarityAndAccentTests`, `FinishedVideoWorkflowTests`, and `ProviderCapabilitiesAndCacheTests` (34 total tests passing).
 
 ---
 

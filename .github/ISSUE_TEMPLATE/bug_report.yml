@@ -1,0 +1,63 @@
+name: Bug Report
+description: Report a reproducible defect, crash, or unexpected behavior in Anime Dub Studio.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting an issue! Please ensure you have tested with the latest release before submitting.
+  - type: textarea
+    id: problem-description
+    attributes:
+      label: Description of the Bug
+      description: A clear and concise description of what the bug is.
+      placeholder: When dubbing a dual-audio MKV, audio extraction fails at Stage 2...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Steps to Reproduce
+      description: Exact steps to reproduce the behavior.
+      placeholder: |
+        1. Open Anime Dub Studio
+        2. Click 'Create New Dub' and select video 'sample.mkv'
+        3. Set Similarity to 85% and click 'Start Pipeline'
+        4. See error dialog at 15% progress
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: What you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior / Error Logs
+      description: Paste any error messages, terminal logs, or crash traces here.
+      render: shell
+  - type: dropdown
+    id: macos-version
+    attributes:
+      label: macOS Version
+      options:
+        - "macOS 15 Sequoia"
+        - "macOS 14 Sonoma"
+        - "Other / Beta"
+    validations:
+      required: true
+  - type: dropdown
+    id: apple-silicon-chip
+    attributes:
+      label: Apple Silicon Hardware
+      options:
+        - "Apple M4 / M4 Pro / M4 Max"
+        - "Apple M3 / M3 Pro / M3 Max"
+        - "Apple M2 / M2 Pro / M2 Max"
+        - "Apple M1 / M1 Pro / M1 Max"
+    validations:
+      required: true
