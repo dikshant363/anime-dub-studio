@@ -6,6 +6,7 @@ import AnimeDubCore
 public struct DubbingEditorView: View {
     @ObservedObject var viewModel: StudioViewModel
     @StateObject private var editorVM: DubbingEditorViewModel
+    @State private var showingCastSheet = false
     let projectId: String
     let episodeId: String
 
@@ -53,6 +54,15 @@ public struct DubbingEditorView: View {
                     .background(Color(NSColor.controlBackgroundColor))
                     .clipShape(Capsule())
                 }
+
+                Button {
+                    showingCastSheet = true
+                } label: {
+                    Label("Character Cast", systemImage: "person.2.circle")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .help("Inspect reference audio, character provenance, and assign voices")
 
                 Button {
                     editorVM.saveChanges()
@@ -196,6 +206,12 @@ public struct DubbingEditorView: View {
                 .frame(minWidth: 440)
             }
         }
+        .sheet(isPresented: $showingCastSheet) {
+            CharacterCastManagerSheet(
+                editorVM: editorVM,
+                isPresented: $showingCastSheet
+            )
+        }
     }
 }
 
@@ -297,6 +313,133 @@ struct DialogueSegmentRow: View {
             hindiText = segment.adaptedHindiText
             hinglishText = segment.adaptedHinglishText
             selectedVoice = segment.voiceId ?? "Rishi"
+        }
+    }
+}
+
+struct CharacterCastManagerSheet: View {
+    @ObservedObject var editorVM: DubbingEditorViewModel
+    @Binding var isPresented: Bool
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Character Cast & Voice Profiles")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                    Text("Inspect reference audio provenance, measured acoustic observations, and reassign voices across cast.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button("Done") {
+                    isPresented = false
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+            }
+            .padding(16)
+            .background(Color(NSColor.windowBackgroundColor))
+            .overlay(Divider(), alignment: .bottom)
+
+            ScrollView {
+                VStack(spacing: 12) {
+                    ForEach(editorVM.characterProfiles) { profile in
+                        CharacterProfileEditorRow(profile: profile) { newVoice, newName in
+                            editorVM.updateCharacterProfile(speakerTag: profile.speakerTag, newVoiceId: newVoice, newName: newName)
+                        }
+                    }
+                }
+                .padding(16)
+            }
+        }
+        .frame(minWidth: 540, minHeight: 420)
+    }
+}
+
+struct CharacterProfileEditorRow: View {
+    let profile: CharacterProfile
+    let onUpdate: (String, String) -> Void
+
+    @State private var name: String = ""
+    @State private var selectedVoice: String = "Rishi"
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(profile.speakerTag)
+                    .font(.caption)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.tint)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.accentColor.opacity(0.12))
+                    .clipShape(Capsule())
+
+                TextField("Character Name", text: $name)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.subheadline)
+                    .onChange(of: name) { _, newName in
+                        onUpdate(selectedVoice, newName)
+                    }
+
+                Spacer()
+
+                Picker("Voice", selection: $selectedVoice) {
+                    Text("Rishi (Lead M)").tag("Rishi")
+                    Text("Lekha (Lead F)").tag("Lekha")
+                    Text("Aman (Secondary M)").tag("Aman")
+                    Text("Tara (Secondary F)").tag("Tara")
+                }
+                .pickerStyle(.menu)
+                .frame(width: 150)
+                .onChange(of: selectedVoice) { _, newVoice in
+                    onUpdate(newVoice, name)
+                }
+            }
+
+            // Reference audio provenance and observations
+            HStack(spacing: 12) {
+                if let refPath = profile.referenceAudioPath, FileManager.default.fileExists(atPath: refPath) {
+                    Button {
+                        let sound = NSSound(contentsOfFile: refPath, byReference: true)
+                        sound?.play()
+                    } label: {
+                        Label("Audition Reference", systemImage: "play.circle")
+                            .font(.caption2)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.mini)
+                }
+
+                if let provenance = profile.referenceProvenance {
+                    Text("Provenance: \(provenance)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                if let dur = profile.measuredDurationSeconds {
+                    Text("• \(String(format: "%.1fs", dur))")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Text("Engine: \(profile.engineCompatibility)")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .padding(12)
+        .background(Color(NSColor.controlBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .onAppear {
+            name = profile.name
+            selectedVoice = profile.voiceId
         }
     }
 }

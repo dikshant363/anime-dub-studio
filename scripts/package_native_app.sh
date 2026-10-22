@@ -6,7 +6,7 @@ APP_NAME="Anime Dub Studio"
 DIST_DIR="${REPO_ROOT}/dist"
 APP_BUNDLE="${DIST_DIR}/${APP_NAME}.app"
 DMG_PATH="${DIST_DIR}/${APP_NAME}.dmg"
-ZIP_PATH="${DIST_DIR}/Anime-Dub-Studio-v2.0.0-macos-arm64.zip"
+ZIP_PATH="${DIST_DIR}/Anime-Dub-Studio-v2.1.1-macos-arm64.zip"
 
 echo "=========================================================="
 echo " Packaging ${APP_NAME} Native Swift macOS Application"
@@ -59,9 +59,9 @@ cat << 'EOF' > "${APP_BUNDLE}/Contents/Info.plist"
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.0.0</string>
+	<string>2.1.1</string>
 	<key>CFBundleVersion</key>
-	<string>2.0.0</string>
+	<string>2.1.1</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.entertainment</string>
 	<key>LSMinimumSystemVersion</key>

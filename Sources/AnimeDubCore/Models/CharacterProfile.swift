@@ -13,6 +13,18 @@ public struct CharacterProfile: Codable, Identifiable, Sendable {
     public var originalPitchF0: Double?
     public var spectralCentroid: Double?
     public var speakerSimilarity: Double
+    public var targetNaturalness: Double
+    public var accentMode: AccentPreservationMode
+    public var providerId: String
+    public var referenceAudioPath: String?
+    public var referenceProvenance: String?
+    public var assignmentConfidence: Double?
+    public var measuredPitchF0: Double?
+    public var measuredDurationSeconds: Double?
+    public var pronunciationNotes: String?
+    public var createdAt: Date
+    public var lastModifiedAt: Date
+    public var engineCompatibility: String
 
     public init(
         speakerTag: String,
@@ -25,7 +37,19 @@ public struct CharacterProfile: Codable, Identifiable, Sendable {
         pitchPercent: Double = 0.0,
         originalPitchF0: Double? = nil,
         spectralCentroid: Double? = nil,
-        speakerSimilarity: Double = 80.0
+        speakerSimilarity: Double = 80.0,
+        targetNaturalness: Double = 85.0,
+        accentMode: AccentPreservationMode = .balanced,
+        providerId: String = "mac_native",
+        referenceAudioPath: String? = nil,
+        referenceProvenance: String? = nil,
+        assignmentConfidence: Double? = nil,
+        measuredPitchF0: Double? = nil,
+        measuredDurationSeconds: Double? = nil,
+        pronunciationNotes: String? = nil,
+        createdAt: Date = Date(),
+        lastModifiedAt: Date = Date(),
+        engineCompatibility: String = "macOS Native Speech 14+"
     ) {
         self.speakerTag = speakerTag
         self.name = name
@@ -38,6 +62,18 @@ public struct CharacterProfile: Codable, Identifiable, Sendable {
         self.originalPitchF0 = originalPitchF0
         self.spectralCentroid = spectralCentroid
         self.speakerSimilarity = speakerSimilarity
+        self.targetNaturalness = targetNaturalness
+        self.accentMode = accentMode
+        self.providerId = providerId
+        self.referenceAudioPath = referenceAudioPath
+        self.referenceProvenance = referenceProvenance
+        self.assignmentConfidence = assignmentConfidence
+        self.measuredPitchF0 = measuredPitchF0 ?? originalPitchF0
+        self.measuredDurationSeconds = measuredDurationSeconds
+        self.pronunciationNotes = pronunciationNotes
+        self.createdAt = createdAt
+        self.lastModifiedAt = lastModifiedAt
+        self.engineCompatibility = engineCompatibility
     }
 
     public static let defaultCast: [CharacterProfile] = [

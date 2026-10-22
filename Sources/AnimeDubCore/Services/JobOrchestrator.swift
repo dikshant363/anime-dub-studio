@@ -246,11 +246,55 @@ public final class JobOrchestrator: @unchecked Sendable {
             emit(stage: .diarizing, progress: 40.0, message: "Assigned character profiles across cast.")
         }
 
-        // Setup character map
+        // Setup character map with genuine reference audio provenance
         var characterMap: [String: CharacterProfile] = [:]
-        let activeCast = projectStore.loadCharacterProfiles(for: project.id)
-        for profile in activeCast {
+        let existingCast = projectStore.loadCharacterProfiles(for: project.id)
+        for profile in existingCast {
             characterMap[profile.speakerTag] = profile
+        }
+
+        let detectedSpeakerTags = Set(asrSegments.map { $0.speaker })
+        for (castIndex, tag) in detectedSpeakerTags.sorted().enumerated() {
+            if characterMap[tag] == nil {
+                let defaultTemplate = CharacterProfile.defaultCast[min(castIndex, CharacterProfile.defaultCast.count - 1)]
+                let newProfile = CharacterProfile(
+                    speakerTag: tag,
+                    name: defaultTemplate.name,
+                    voiceId: defaultTemplate.voiceId,
+                    gender: defaultTemplate.gender,
+                    personality: defaultTemplate.personality,
+                    speakingStyle: defaultTemplate.speakingStyle,
+                    speedRate: defaultTemplate.speedRate,
+                    pitchPercent: defaultTemplate.pitchPercent,
+                    speakerSimilarity: options.speakerSimilarity,
+                    targetNaturalness: options.targetNaturalness,
+                    accentMode: options.accentPreservation
+                )
+                characterMap[tag] = newProfile
+            }
+
+            // Extract genuine reference audio slice if not yet extracted
+            if characterMap[tag]?.referenceAudioPath == nil || !FileManager.default.fileExists(atPath: characterMap[tag]!.referenceAudioPath!) {
+                let speakerSegs = asrSegments.filter { $0.speaker == tag && ($0.end - $0.start) >= 1.2 }
+                let bestSeg = speakerSegs.max(by: { $0.confidence < $1.confidence }) ?? asrSegments.first(where: { $0.speaker == tag })
+                if let seg = bestSeg {
+                    let refClipURL = voicesDir.appendingPathComponent("ref_\(tag).wav")
+                    let dur = max(0.2, min(6.0, seg.end - seg.start))
+                    let extractRes = try? await ProcessRunner.run(executable: "ffmpeg", arguments: [
+                        "-y", "-ss", "\(seg.start)",
+                        "-t", "\(dur)",
+                        "-i", asrAudioURL.path,
+                        "-acodec", "pcm_s16le", "-ar", "24000", "-ac", "1",
+                        refClipURL.path
+                    ])
+                    if extractRes?.isSuccess == true && FileManager.default.fileExists(atPath: refClipURL.path) {
+                        characterMap[tag]?.referenceAudioPath = refClipURL.path
+                        characterMap[tag]?.referenceProvenance = "Source segment #\(seg.id + 1) (\(String(format: "%.2fs–%.2fs", seg.start, seg.start + dur)))"
+                        characterMap[tag]?.measuredDurationSeconds = dur
+                        characterMap[tag]?.assignmentConfidence = seg.confidence
+                    }
+                }
+            }
         }
         projectStore.saveCharacterProfiles(Array(characterMap.values), for: project.id)
 
@@ -335,27 +379,30 @@ public final class JobOrchestrator: @unchecked Sendable {
             try await checkControl()
             let segAudioURL = voicesDir.appendingPathComponent(String(format: "seg_%03d.wav", seg.segmentIndex))
             let syncAudioURL = voicesDir.appendingPathComponent(String(format: "seg_%03d_sync.wav", seg.segmentIndex))
+            let sigFileURL = voicesDir.appendingPathComponent(String(format: "seg_%03d.sig", seg.segmentIndex))
             let char = characterMap[seg.speakerLabel] ?? characterMap["SPEAKER_00"]!
 
             let speechText = isHinglishTarget && !seg.ttsPronunciationText.isEmpty ? seg.ttsPronunciationText : seg.adaptedHindiText
             let targetDur = seg.targetDuration
 
+            let currentSig = "\(speechText)|\(char.voiceId)|\(char.speedRate)|\(options.speakerSimilarity)|\(options.targetNaturalness)|\(options.accentPreservation.rawValue)"
+            let cachedSig = (try? String(contentsOf: sigFileURL, encoding: .utf8)) ?? ""
+            let isCacheValid = (currentSig == cachedSig) && FileManager.default.fileExists(atPath: segAudioURL.path)
+
             var finalAudioURL: URL = segAudioURL
             var finalDuration: Double = targetDur
 
-            if FileManager.default.fileExists(atPath: syncAudioURL.path) {
-                finalAudioURL = syncAudioURL
-            } else if FileManager.default.fileExists(atPath: segAudioURL.path) {
-                // Adjust timing
-                let (stretchedURL, dur, _) = try await timingService.adjustAudioTiming(
-                    inputURL: segAudioURL,
-                    outputURL: syncAudioURL,
-                    targetDuration: targetDur,
-                    currentDuration: targetDur
-                )
-                finalAudioURL = stretchedURL
-                finalDuration = dur
+            if isCacheValid {
+                if FileManager.default.fileExists(atPath: syncAudioURL.path) {
+                    finalAudioURL = syncAudioURL
+                } else {
+                    finalAudioURL = segAudioURL
+                }
+                finalDuration = seg.synthesizedDuration ?? targetDur
             } else {
+                try? FileManager.default.removeItem(at: segAudioURL)
+                try? FileManager.default.removeItem(at: syncAudioURL)
+
                 let synthRes = try await speechSynthesizer.synthesize(
                     text: speechText,
                     hindiText: seg.adaptedHindiText,
@@ -383,6 +430,7 @@ public final class JobOrchestrator: @unchecked Sendable {
                     finalAudioURL = segAudioURL
                     finalDuration = rawDur
                 }
+                try? currentSig.write(to: sigFileURL, atomically: true, encoding: .utf8)
             }
 
             dialogueSegments[idx].audioPath = finalAudioURL.path

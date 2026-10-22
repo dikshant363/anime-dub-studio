@@ -1,4 +1,4 @@
-# Engineering Task Tracking — Anime Dub Studio v2.0
+# Engineering Task Tracking — Anime Dub Studio v2.1.1
 
 This document tracks all engineering deliverables, architecture milestones, and production gates for the native Swift rewrite of Anime Dub Studio.
 

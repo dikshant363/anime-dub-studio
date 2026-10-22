@@ -1,4 +1,4 @@
-# Anime Dub Studio v2.0
+# Anime Dub Studio v2.1.1
 > **Native Swift & SwiftUI macOS Workstation for Local-First Japanese Video → Natural Hindi/Hinglish Dubbing.**
 
 Anime Dub Studio is a native macOS application engineered in Swift 6.4 and SwiftUI to transcribe Japanese anime dialogue, cluster and assign character voices, localize the script into natural colloquial spoken Hindi or Roman Hinglish, synthesize authentic character voices on-device, synchronize dialogue pacing, master the soundtrack with BGM preservation, and export high-definition dubbed video without cloud subscription fees.

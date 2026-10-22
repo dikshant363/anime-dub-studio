@@ -4,6 +4,19 @@ import AVFoundation
 public final class SpeechSynthesisProvider: SpeechSynthesisProviderProtocol, Sendable {
     public let name = "macOS Native Speech (Indian Cast Voices)"
 
+    public var capabilities: SpeechSynthesisCapabilities {
+        SpeechSynthesisCapabilities(
+            providerId: "com.apple.speech.native_cast",
+            providerName: "macOS Native Speech (Indian Cast Voices)",
+            technologyType: .nativeAcousticCast,
+            supportsVoiceCloning: false,
+            supportsReferenceAudioConditioning: false,
+            supportsIndependentNaturalnessControl: true,
+            supportedVoiceIds: ["Rishi", "Lekha", "Aman", "Tara"],
+            disclosureNotice: "Native Indian cast voices with prosodic cadence adaptation and acoustic presence coloration. Zero-shot neural voice cloning from reference audio is not supported by macOS native speech."
+        )
+    }
+
     private let voiceMap: [String: String] = [
         "rishi": "Rishi",
         "aman": "Aman",

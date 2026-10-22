@@ -111,8 +111,46 @@ public struct SynthesisResult: Sendable {
     }
 }
 
+public enum SynthesisTechnologyType: String, Codable, Sendable {
+    case nativeAcousticCast = "native_acoustic_cast"
+    case neuralSpeakerConditioned = "neural_speaker_conditioned"
+    case cloudVoiceCloning = "cloud_voice_cloning"
+}
+
+public struct SpeechSynthesisCapabilities: Codable, Sendable {
+    public let providerId: String
+    public let providerName: String
+    public let technologyType: SynthesisTechnologyType
+    public let supportsVoiceCloning: Bool
+    public let supportsReferenceAudioConditioning: Bool
+    public let supportsIndependentNaturalnessControl: Bool
+    public let supportedVoiceIds: [String]
+    public let disclosureNotice: String
+
+    public init(
+        providerId: String,
+        providerName: String,
+        technologyType: SynthesisTechnologyType,
+        supportsVoiceCloning: Bool,
+        supportsReferenceAudioConditioning: Bool,
+        supportsIndependentNaturalnessControl: Bool,
+        supportedVoiceIds: [String],
+        disclosureNotice: String
+    ) {
+        self.providerId = providerId
+        self.providerName = providerName
+        self.technologyType = technologyType
+        self.supportsVoiceCloning = supportsVoiceCloning
+        self.supportsReferenceAudioConditioning = supportsReferenceAudioConditioning
+        self.supportsIndependentNaturalnessControl = supportsIndependentNaturalnessControl
+        self.supportedVoiceIds = supportedVoiceIds
+        self.disclosureNotice = disclosureNotice
+    }
+}
+
 public protocol SpeechSynthesisProviderProtocol: Sendable {
     var name: String { get }
+    var capabilities: SpeechSynthesisCapabilities { get }
     func synthesize(
         text: String,
         hindiText: String?,

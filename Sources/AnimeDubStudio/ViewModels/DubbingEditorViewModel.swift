@@ -10,6 +10,7 @@ public final class DubbingEditorViewModel: ObservableObject {
 
     @Published public var episode: Episode?
     @Published public var segments: [DialogueSegment] = []
+    @Published public var characterProfiles: [CharacterProfile] = []
     @Published public var selectedSegmentIndex: Int = 0
     @Published public var isPlaying: Bool = false
     @Published public var currentPlaybackTime: Double = 0.0
@@ -33,6 +34,7 @@ public final class DubbingEditorViewModel: ObservableObject {
            let ep = proj.episodes.first(where: { $0.id == episodeId }) {
             self.episode = ep
             self.segments = projectStore.loadDialogueSegments(for: episodeId, in: projectId)
+            self.characterProfiles = projectStore.loadCharacterProfiles(for: projectId)
 
             let mediaURL = URL(fileURLWithPath: ep.exportedVideoPath ?? ep.sourceMediaPath)
             if FileManager.default.fileExists(atPath: mediaURL.path) {
@@ -66,11 +68,42 @@ public final class DubbingEditorViewModel: ObservableObject {
         voiceId: String
     ) {
         guard index >= 0 && index < segments.count else { return }
-        segments[index].adaptedHindiText = hindi
-        segments[index].adaptedHinglishText = hinglish
-        segments[index].speakerLabel = speaker
-        segments[index].voiceId = voiceId
-        saveChanges()
+        let changed = (segments[index].adaptedHindiText != hindi) ||
+                      (segments[index].adaptedHinglishText != hinglish) ||
+                      (segments[index].speakerLabel != speaker) ||
+                      (segments[index].voiceId != voiceId)
+        if changed {
+            segments[index].adaptedHindiText = hindi
+            segments[index].adaptedHinglishText = hinglish
+            segments[index].speakerLabel = speaker
+            segments[index].voiceId = voiceId
+
+            // Invalidate audio cache on disk for this segment so re-export will re-synthesize this line
+            let voicesDir = projectStore.episodeDirectory(for: projectId, episodeId: episodeId).appendingPathComponent("voices", isDirectory: true)
+            let sigFile = voicesDir.appendingPathComponent(String(format: "seg_%03d.sig", segments[index].segmentIndex))
+            try? FileManager.default.removeItem(at: sigFile)
+
+            saveChanges()
+        }
+    }
+
+    public func updateCharacterProfile(speakerTag: String, newVoiceId: String, newName: String) {
+        if let idx = characterProfiles.firstIndex(where: { $0.speakerTag == speakerTag }) {
+            characterProfiles[idx].voiceId = newVoiceId
+            characterProfiles[idx].name = newName
+            projectStore.saveCharacterProfiles(characterProfiles, for: projectId)
+
+            // Update all segments matching this speaker
+            for i in 0..<segments.count {
+                if segments[i].speakerLabel == speakerTag {
+                    segments[i].voiceId = newVoiceId
+                    let sigFile = projectStore.episodeDirectory(for: projectId, episodeId: episodeId)
+                        .appendingPathComponent(String(format: "voices/seg_%03d.sig", segments[i].segmentIndex))
+                    try? FileManager.default.removeItem(at: sigFile)
+                }
+            }
+            saveChanges()
+        }
     }
 
     public func regenerateSelectedLineAudio() async {
