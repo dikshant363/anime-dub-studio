@@ -24,6 +24,12 @@ frontend/.next/
 storage/studio.db*
 storage/projects/*
 !storage/projects/.gitkeep
+storage/*.mp4
+storage/*.mkv
+storage/*.srt
+storage/*.ass
+storage/*.wav
+storage/*.mp3
 tests/test_data/*.mp4
 tests/test_data/*.mp3
 tests/test_data/*.wav
@@ -42,4 +48,7 @@ dist/
 src-tauri/target/
 src-tauri/swift/AppleFoundationModelService
 frontend/out/
+
+# Swift Package Manager
+.build/
 

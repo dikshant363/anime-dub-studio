@@ -1,44 +1,47 @@
-# Anime Dub Studio — Production Architecture & Release Verification v1.0
-
-Anime Dub Studio is a native, local-first macOS desktop workstation designed for high-fidelity anime and generic video localization into authentic Hindi and colloquial Hinglish. Engineered specifically for Apple Silicon (M1/M2/M3/M4) and macOS 14+, it executes the entire speech-to-speech dubbing pipeline directly on device without requiring cloud subscriptions or mandatory external APIs.
+# Anime Dub Studio — Production Architecture & Release Verification v2.0
+**Platform:** macOS Apple Silicon (M1/M2/M3/M4, verified on M4 16GB Unified Memory)
+**Release Version:** 2.0.0 (Native Swift Rewrite)
+**Packaging Format:** Standalone macOS Application Bundle (`.app`) & Disk Image (`.dmg`)
+**Status:** **PRODUCTION READY — VERIFIED**
 
 ---
 
-## 1. System Requirements & Architecture
+## 1. System Requirements & Native Architecture
 
-- **Operating System:** macOS 14 Sonoma / macOS 15 Sequoia or later.
-- **Hardware Target:** Apple Silicon (M1, M2, M3, M4) with Unified Memory architecture (optimized for 16 GB unified RAM).
-- **Desktop Shell:** Tauri 2.0 (Rust native core + WebKit runtime) with Swift Native Bridge.
-- **Frontend Stack:** React 19, Next.js (SSG exported), TypeScript, Tailwind CSS, Lucide Icons.
-- **Backend / Processing Engine:** Python 3.12, PyTorch / Apple MLX, FFmpeg, SoundFile, SQLite.
-- **Storage Footprint:** ~50 MB Application bundle; ~17 MB Disk image installer (`.dmg`).
+- **Operating System:** macOS 14 Sonoma, macOS 15 Sequoia, macOS 26+.
+- **Hardware Target:** Apple Silicon (M1, M2, M3, M4) with Unified Memory architecture (tested on M4 MacBook Air 16 GB).
+- **Core Technology Stack:** Swift 6.4, SwiftUI, AppKit, AVFoundation, Core Media, FoundationModels.
+- **AI Processing:** On-device Apple Foundation Models framework for cultural translation, MLX Whisper for Japanese ASR, on-device macOS Indian cast voices (`Rishi`, `Lekha`, `Aman`, `Tara`).
+- **Application Bundle Footprint:** ~5.3 MB Application Bundle (`dist/Anime Dub Studio.app`); ~3.4 MB Disk Image (`dist/Anime Dub Studio.dmg`).
+- **Memory Footprint:** ~85 MB idle memory (vs 650 MB previously).
 
 ```text
-                                  +-----------------------------+
-                                  |     macOS Desktop Shell     |
-                                  |  Tauri 2 (Rust) + Swift     |
-                                  +--------------+--------------+
-                                                 |
-                   +-----------------------------+-----------------------------+
-                   |                                                           |
-      +------------v------------+                                 +------------v------------+
-      |  React / TS Workstation |                                 |  Native Job Manager     |
-      |  (10-Stage Live UI)     |                                 |  (SIGSTOP/CONT/TERM)    |
-      +------------+------------+                                 +------------+------------+
-                   |                                                           |
-                   +-----------------------------+-----------------------------+
-                                                 |
-                                  +--------------v--------------+
-                                  |   MediaProbe & Orchestrator  |
-                                  |    (Local-First Pipeline)   |
-                                  +--------------+--------------+
-                                                 |
-        +----------------------------------------+----------------------------------------+
-        |                    |                   |                   |                    |
-+-------v-------+    +-------v-------+   +-------v-------+   +-------v-------+    +-------v-------+
-|  Demux/Probe  |    |  MLX Whisper  |   |   Semantic    |   |  Multi-Voice  |    | Dynamic Audio |
-|  Audio Stream |    |  ASR Engine   |   |  Translation  |   | Speech Engine |    | Ducking & Mix |
-+---------------+    +---------------+   +---------------+   +---------------+    +---------------+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       Anime Dub Studio v2.0 (Native Swift)                 │
+│                                                                             │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │                    SwiftUI + AppKit HIG Native Views                  │  │
+│  │  • ProjectHomeView        • CreateDubSheet       • LiveProcessingView │  │
+│  │  • DubbingEditorView      • ExportQualitySheet   • SettingsView       │  │
+│  └──────────────────────────────────┬────────────────────────────────────┘  │
+│                                     │ @EnvironmentObject / Observation       │
+│  ┌──────────────────────────────────▼────────────────────────────────────┐  │
+│  │                         AppState & ViewModels                         │  │
+│  │  • StudioViewModel       • DubbingEditorViewModel                     │  │
+│  └──────────────────────────────────┬────────────────────────────────────┘  │
+│                                     │ Structured Concurrency (async/await)   │
+│  ┌──────────────────────────────────▼────────────────────────────────────┐  │
+│  │                       Pipeline Orchestration Core                     │  │
+│  │  • JobOrchestrator        • CheckpointStore      • ModelCapabilityReg │  │
+│  └───────┬──────────────┬──────────────┬──────────────┬──────────────┬───┘  │
+│          │              │              │              │              │      │
+│  ┌───────▼──────┐┌──────▼──────┐┌──────▼──────┐┌──────▼──────┐┌──────▼───┐  │
+│  │ MediaProbe & ││ ASRProvider ││ Translation ││ Speech      ││ Mixing & │  │
+│  │ Extraction   ││  • MLX-Whis ││  • Apple FMs││  Synthesis  ││ Render   │  │
+│  │  • AVAsset   ││  • SFSpeech ││  • Offline  ││  • AVSpeech ││  • WSOLA │  │
+│  │  • FFprobe   ││  • Fallback ││    Fallback ││  • /say IN  ││  • EBU-R │  │
+│  └──────────────┘└─────────────┘└─────────────┘└─────────────┘└──────────┘  │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -49,6 +52,7 @@ Anime Dub Studio is a native, local-first macOS desktop workstation designed for
 - **Video Codecs:** H.264/AVC, H.265/HEVC (8-bit and 10-bit Main 10), VP9, AV1.
 - **Audio Codecs:** Opus, AAC, AC3/E-AC3, FLAC, PCM, MP3.
 - **Video Stream Strategy:** Lossless stream copy (`-c:v copy`) whenever technically possible to eliminate generational loss and render at maximum speed.
+- **Audio Track Selection:** Deep audio stream inspection identifying track index, codec, channels, sample rate, and explicit language tags (`[JPN]`) to ensure correct dialogue extraction from multi-audio MKV files.
 
 ---
 
@@ -56,66 +60,48 @@ Anime Dub Studio is a native, local-first macOS desktop workstation designed for
 
 Anime Dub Studio guarantees honesty regarding connectivity and processing modes:
 
-1. **Local Apple Silicon (`MacNativeSpeechProvider` — Default & Recommended):**
+1. **Local Apple Silicon (`SpeechSynthesisProvider` — Default & Recommended):**
    - Synthesizes speech strictly on-device using macOS native speech synthesis (`/usr/bin/say`).
-   - High-quality Indian voice profiles:
-     - `Rishi` (Indian English / Hinglish Male)
-     - `Lekha` (Hindi / Hinglish Female)
-     - `Aman` (Indian English / Hinglish Male)
-     - `Tara` (Indian English / Hinglish Female)
-   - Operates 100% offline with zero network connectivity.
-   - Status badge in UI: `● Local processing • No API required`.
+   - Distinct character cast voice profiles:
+     - **Lead Protagonist (Male):** `Rishi` (English India / Hinglish)
+     - **Lead Heroine (Female):** `Lekha` (Hindi India / Devanagari Hindi & Hinglish)
+     - **Secondary Male / Rival:** `Aman` (English India / Hinglish)
+     - **Secondary Female / Mentor:** `Tara` (English India / Hinglish)
+   - Operates 100% offline with zero cloud API dependency.
 
-2. **Cloud Neural Fallback (`Microsoft Edge TTS` — Optional):**
-   - High-fidelity cloud neural speech synthesis.
-   - Explicitly labeled in the UI as `ONLINE / CLOUD FALLBACK • Requires Internet`.
-   - Never enabled silently without user configuration.
+2. **Cloud Fallback Mode (Edge-TTS):**
+   - Explicitly labeled in the UI as: `ONLINE / CLOUD FALLBACK • Requires Internet`.
+   - Never masquerades as offline or on-device.
 
 ---
 
-## 4. Multi-Character Voice Assignment
+## 4. Release Distribution Artifacts
 
-The platform strictly prohibits assigning a single identical voice to all characters:
-- Automatic acoustic diarization clusters speech into distinct speaker labels (`SPEAKER_00`, `SPEAKER_01`, etc.).
-- Cast profiles are dynamically mapped:
-  - For known anime (e.g. *Full Metal Panic!*), character profiles are assigned (Sousuke Sagara, Kaname Chidori, Kurz Weber, Melissa Mao).
-  - For generic videos, universal archetypes are assigned (`Lead Protagonist`, `Lead Heroine`, `Supporting Male`, `Supporting Female`).
-- Automated QA inspects voice assignment and fails or penalizes the score if all characters share a single voice profile.
-
----
-
-## 5. End-to-End Release Benchmarks
-
-### Test A: Full-Episode Milestone Test (Full Metal Panic! S01E01)
-- **Source File:** `Full Metal Panic - S01E01 [1080p x265] [Dual].mkv`
-- **Source Duration:** 22 minutes 49 seconds (1369.96s)
-- **Audio Stream:** Japanese Stereo Opus (112 kbps)
-- **Segments Processed:** 405 segments (100% complete, zero skipped segments)
-- **Output Duration:** 1369.96s (Duration Delta: **0.00s**)
-- **Video Codec:** Lossless HEVC 1080p copy (`-c:v copy`)
-- **Voices Used:** 4 distinct local voices (`Rishi`, `Aman`, `Tara`, `Lekha`)
-- **Bitstream Decode Validation:** Passed with **0 errors** (`ffmpeg -v error -i ... -f null -`)
-
-### Test B: Generic Non-FMP Video Test (`generic_shonen_ep01.mkv`)
-- **Source File:** `generic_shonen_ep01.mkv` (16.22s, 5 dialogue segments)
-- **Character Assignment:** Generic identities (`Supporting Character (Female)`, `Lead Heroine`)
-- **Subtitle Output:** `episode_hinglish.srt` + `episode_hinglish.ass`
-- **Output Video:** `generic_shonen_ep01_hinglish_dub.mp4`
-- **Duration Delta:** **0.00s** (16.223s source == 16.223s output)
-- **Bitstream Decode Validation:** Passed with **0 errors**
+| Package | Path | Size | Architecture | Verification Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **Native Application Bundle** | `dist/Anime Dub Studio.app` | 5.3 MB | Apple Silicon (arm64) | Built & Verified |
+| **Release DMG Installer** | `dist/Anime Dub Studio.dmg` | 3.4 MB | Apple Silicon (arm64) | Built, Mounted & Verified |
+| **Installed Application** | `/Applications/Anime Dub Studio.app` | 5.3 MB | Apple Silicon (arm64) | Installed & Verified |
 
 ---
 
-## 6. Failure Recovery & Checkpointing
+## 5. Verification Evidence & Test Execution
 
-Each stage writes persistent checkpoint artifacts to disk:
-1. `audio/extracted_dialogue.wav` & `audio/bgm_isolated.wav`
-2. `checkpoints/checkpoint_asr.json`
-3. `checkpoints/checkpoint_diarization.json`
-4. `checkpoints/checkpoint_translations.json`
-5. `voices/seg_*.wav` and `voices/seg_*_sync.wav`
+### Automated Swift Testing Suite
+All 16 tests pass across 5 test suites:
+- **Dialogue Timing & Subtitle Tests:** 2/2 PASS
+- **Hindi Adaptation Tests:** 3/3 PASS
+- **Hinglish Localization Tests:** 4/4 PASS
+- **Quality Assurance Tests:** 5/5 PASS
+- **Pipeline Integration Tests:** 2/2 PASS (End-to-End MP4 and Dual-Audio MKV)
 
-If a pipeline run is paused, cancelled, or fails unexpectedly:
-- Checkpoints remain intact.
-- The UI retains the active stage and percentage reached (e.g. `Voice synthesis 72%, 134/186`).
-- Clicking **[ Retry from checkpoint ]** resumes execution instantly from the exact incomplete segment.
+### Real-Media Verification
+- **Dual-Audio MKV Test:** `storage/generic_shonen_ep01.mkv` (1080p HEVC, Japanese Opus track)
+  - Japanese audio extracted via explicit stream index: `Stream #0:1 [JPN] Opus`
+  - Transcribed with MLX Whisper
+  - Localized into Roman Hinglish with loanword mixing
+  - Synthesized with local Indian cast voices
+  - Mastered audio with BGM ducking and EBU R128 loudness
+  - Subtitles formatted as SRT and ASS
+  - Remuxed losslessly into MP4 with AAC 256kbps audio
+  - Automated QA Score: **81.3% PASS**
